@@ -16,9 +16,10 @@ namespace PanoramaConfig {
     constexpr int MIN_INLIERS_REQUIRED = 20;
     
     // Panorama Size Limits
-    constexpr int MAX_PANORAMA_DIMENSION = 10000;
+    constexpr int MAX_PANORAMA_DIMENSION = 15000;  // Increased for legitimate large panoramas
     constexpr int MIN_IMAGE_DIMENSION = 50;
     constexpr int PANORAMA_PADDING = 10;
+    constexpr size_t MAX_PANORAMA_MEMORY = 2147483648;  // 2GB max memory for panorama
     
     // Homography Validation
     constexpr double MIN_HOMOGRAPHY_DETERMINANT = 0.001;

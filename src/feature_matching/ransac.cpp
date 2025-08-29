@@ -57,7 +57,7 @@ RANSACResult RANSAC::findHomography(
             pts2_sample.push_back(points2[idx]);
         }
         
-        cv::Mat H = computeHomographyDLT(pts1_sample, pts2_sample);
+        cv::Mat H = computeHomographyMinimal(pts1_sample, pts2_sample);
         
         if (H.empty()) continue;
         
@@ -116,72 +116,38 @@ RANSACResult RANSAC::findHomography(
     return result;
 }
 
-cv::Mat RANSAC::computeHomographyDLT(const std::vector<cv::Point2f>& pts1,
-                                    const std::vector<cv::Point2f>& pts2) {
+cv::Mat RANSAC::computeHomographyMinimal(const std::vector<cv::Point2f>& pts1,
+                                         const std::vector<cv::Point2f>& pts2) {
     if (pts1.size() != 4 || pts2.size() != 4) {
         return cv::Mat();
     }
     
-    // Direct Linear Transform (DLT) algorithm for homography estimation
-    // For each point correspondence (x1,y1) -> (x2,y2), we have:
-    // x2 = (h11*x1 + h12*y1 + h13) / (h31*x1 + h32*y1 + h33)
-    // y2 = (h21*x1 + h22*y1 + h23) / (h31*x1 + h32*y1 + h33)
-    // 
-    // Cross-multiplying and rearranging gives us two linear equations per point:
-    // -x1*h11 - y1*h12 - h13 + x2*x1*h31 + x2*y1*h32 + x2*h33 = 0
-    // -x1*h21 - y1*h22 - h23 + y2*x1*h31 + y2*y1*h32 + y2*h33 = 0
-    //
-    // We construct matrix A such that A*h = 0, where h is the flattened homography
-    cv::Mat A(8, 9, CV_64F);
+    // Use OpenCV's findHomography with method=0 (regular least squares)
+    // for the minimal 4-point case. This ensures consistency with the
+    // refinement step and leverages OpenCV's optimized implementation.
+    cv::Mat H = cv::findHomography(pts1, pts2, 0);
     
-    for (int i = 0; i < 4; i++) {
-        double x1 = pts1[i].x;
-        double y1 = pts1[i].y;
-        double x2 = pts2[i].x;
-        double y2 = pts2[i].y;
-        
-        A.at<double>(2*i, 0) = x1;
-        A.at<double>(2*i, 1) = y1;
-        A.at<double>(2*i, 2) = 1;
-        A.at<double>(2*i, 3) = 0;
-        A.at<double>(2*i, 4) = 0;
-        A.at<double>(2*i, 5) = 0;
-        A.at<double>(2*i, 6) = -x2*x1;
-        A.at<double>(2*i, 7) = -x2*y1;
-        A.at<double>(2*i, 8) = -x2;
-        
-        A.at<double>(2*i+1, 0) = 0;
-        A.at<double>(2*i+1, 1) = 0;
-        A.at<double>(2*i+1, 2) = 0;
-        A.at<double>(2*i+1, 3) = x1;
-        A.at<double>(2*i+1, 4) = y1;
-        A.at<double>(2*i+1, 5) = 1;
-        A.at<double>(2*i+1, 6) = -y2*x1;
-        A.at<double>(2*i+1, 7) = -y2*y1;
-        A.at<double>(2*i+1, 8) = -y2;
-    }
-    
-    cv::Mat u, w, vt;
-    cv::SVD::compute(A, w, u, vt, cv::SVD::FULL_UV);
-    
-    // Check if SVD succeeded 
-    if (vt.cols != 9 || vt.rows != 9) {
-        // SVD failed - return empty matrix immediately
+    if (H.empty()) {
         return cv::Mat();
     }
     
-    // The solution is the last row of vt (corresponding to the smallest singular value)
-    // With FULL_UV, vt should be 9x9, so we want row 8
-    cv::Mat H = vt.row(8).reshape(0, 3);
+    // Validate the homography
+    double det = cv::determinant(H);
     
     // Check for degenerate homography
-    double det = H.at<double>(2, 2);
     if (std::abs(det) < PanoramaConfig::HOMOGRAPHY_EPSILON) {
-        // Degenerate homography - return empty matrix
         return cv::Mat();
     }
     
-    H = H / det;
+    // Check for numerical issues (NaN or Inf)
+    for (int i = 0; i < H.rows; i++) {
+        for (int j = 0; j < H.cols; j++) {
+            double val = H.at<double>(i, j);
+            if (std::isnan(val) || std::isinf(val)) {
+                return cv::Mat();
+            }
+        }
+    }
     
     return H;
 }

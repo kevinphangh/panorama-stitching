@@ -52,7 +52,7 @@ The codebase follows a modular pipeline architecture:
 
 2. **Feature Matching** (`src/feature_matching/`): `Matcher` class performs brute-force matching with Lowe's ratio test. `RANSAC` class filters matches using homography estimation to remove outliers.
 
-3. **Homography Estimation** (`src/homography/`): `HomographyEstimator` implements Direct Linear Transform (DLT) for computing homography matrices from point correspondences.
+3. **Homography Estimation** (`src/homography/`): `HomographyEstimator` uses RANSAC with OpenCV's homography estimation for robust computation of homography matrices from point correspondences.
 
 4. **Image Warping & Blending** (`src/stitching/`): `ImageWarper` applies perspective transformations. `Blender` supports three modes: simple overlay, feathering, and multiband (Laplacian pyramid) blending.
 
@@ -71,9 +71,9 @@ The main application (`src/main.cpp`) provides a CLI interface that orchestrates
 
 ## Testing Datasets
 
-Three test datasets in `datasets/`:
-- `indoor_scene1/`: Indoor environment images
-- `outdoor_scene1/`: Outdoor scene set 1
-- `outdoor_scene2/`: Outdoor scene set 2
+Three test dataset directories in `datasets/`:
+- `indoor_scene/`: Indoor environment images (3 images: img1.jpg, img2.jpg, img3.jpg)
+- `outdoor_scene1/`: Outdoor scene set 1 (currently empty - add images for testing)
+- `outdoor_scene2/`: Outdoor scene set 2 (currently empty - add images for testing)
 
-Each contains multiple images for panorama stitching experiments.
+Note: Only indoor_scene currently contains test images. Add images to outdoor directories for full experiment testing.

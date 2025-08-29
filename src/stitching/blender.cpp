@@ -119,6 +119,15 @@ cv::Mat Blender::multibandBlend(const cv::Mat& img1, const cv::Mat& img2,
         return cv::Mat();
     }
     
+    // Memory check: estimate memory usage and reduce pyramid levels if needed
+    size_t pixel_count = static_cast<size_t>(img1.rows) * img1.cols;
+    size_t estimated_memory = pixel_count * 3 * 4 * 2 * num_bands;  // rough estimate
+    
+    if (estimated_memory > 1073741824) {  // 1GB threshold
+        num_bands = std::max(3, num_bands - 2);  // Reduce pyramid levels for large images
+        std::cout << "Reducing pyramid levels to " << num_bands << " to conserve memory\n";
+    }
+    
     std::vector<cv::Mat> pyramid1 = createLaplacianPyramid(img1, num_bands);
     std::vector<cv::Mat> pyramid2 = createLaplacianPyramid(img2, num_bands);
     

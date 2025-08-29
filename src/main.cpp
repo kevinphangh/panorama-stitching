@@ -409,6 +409,16 @@ cv::Mat performStitchingDirect(
         return cv::Mat();
     }
     
+    // Check estimated memory usage
+    size_t estimated_bytes = static_cast<size_t>(panorama_size.width) * panorama_size.height * 3 * 2;  // x2 for processing overhead
+    if (estimated_bytes > PanoramaConfig::MAX_PANORAMA_MEMORY) {
+        std::cerr << "Error: Panorama would require approximately " 
+                  << (estimated_bytes / 1048576) << " MB of memory (max: " 
+                  << (PanoramaConfig::MAX_PANORAMA_MEMORY / 1048576) << " MB)\n";
+        std::cerr << "Consider using simpler blend mode (--blend-mode simple) or processing in smaller segments\n";
+        return cv::Mat();
+    }
+    
     // Create output panorama
     cv::Mat panorama = cv::Mat::zeros(panorama_size, img1.type());
     cv::Mat mask1 = cv::Mat::zeros(panorama_size, CV_8UC1);
