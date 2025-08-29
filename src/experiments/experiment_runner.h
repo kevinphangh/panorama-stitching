@@ -1,0 +1,83 @@
+#ifndef EXPERIMENT_RUNNER_H
+#define EXPERIMENT_RUNNER_H
+
+#include <string>
+#include <vector>
+#include <map>
+#include <opencv2/core.hpp>
+
+struct ExperimentConfig {
+    std::string name;
+    std::string detector_type;
+    double ransac_threshold;
+    std::string blend_mode;
+    int max_features;
+    double ratio_test_threshold;
+};
+
+struct ExperimentResult {
+    ExperimentConfig config;
+    
+    // Feature detection metrics
+    int num_keypoints_img1;
+    int num_keypoints_img2;
+    double detection_time_ms;
+    double description_time_ms;
+    
+    // Matching metrics
+    int num_initial_matches;
+    int num_good_matches;
+    int num_inliers;
+    double inlier_ratio;
+    double matching_time_ms;
+    
+    // Homography metrics
+    double homography_time_ms;
+    double reprojection_error;
+    int ransac_iterations;
+    
+    // Stitching metrics
+    double warping_time_ms;
+    double blending_time_ms;
+    double total_time_ms;
+    
+    // Quality metrics
+    double alignment_error;
+    double blend_quality_score;
+    
+    cv::Mat panorama;
+    std::vector<cv::Mat> intermediate_results;
+};
+
+class ExperimentRunner {
+public:
+    ExperimentRunner();
+    
+    void runAllExperiments();
+    void runFeatureDetectorComparison(const std::string& dataset_path);
+    void runRANSACThresholdExperiment(const std::string& dataset_path);
+    void runBlendingComparison(const std::string& dataset_path);
+    void runScalabilityTest(const std::string& dataset_path);
+    
+    ExperimentResult runSingleExperiment(
+        const std::string& img1_path,
+        const std::string& img2_path,
+        const ExperimentConfig& config
+    );
+    
+    void saveResults(const std::string& output_dir);
+    void generateReport(const std::string& output_path);
+    void exportMetricsToCSV(const std::string& csv_path);
+    
+    std::vector<ExperimentResult> getResults() const { return results_; }
+    
+private:
+    std::vector<ExperimentResult> results_;
+    std::map<std::string, std::vector<double>> metrics_by_detector_;
+    std::map<double, std::vector<double>> metrics_by_threshold_;
+    
+    void loadDatasets(const std::string& dataset_dir,
+                     std::vector<std::pair<std::string, std::string>>& image_pairs);
+};
+
+#endif

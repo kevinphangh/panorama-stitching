@@ -1,0 +1,118 @@
+# Build directories
+build/
+cmake-build-*/
+out/
+Release/
+Debug/
+
+# CMake files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+CMakeScripts/
+Testing/
+compile_commands.json
+*.cmake
+!cmake/
+
+# Compiled binaries
+panorama_stitching
+panorama_stitcher
+panorama_simple
+*.exe
+*.out
+*.app
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-*
+.clang-format
+.clangd/
+
+# Test output images
+test_*.jpg
+test_*.png
+result*.jpg
+result*.png
+panorama*.jpg
+panorama*.png
+output*.jpg
+output*.png
+!datasets/**/*.jpg
+!datasets/**/*.png
+
+# Test results directory
+results/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+
+# Python cache (if any scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Documentation build
+docs/_build/
+html/
+latex/
+
+# Core dumps
+core
+core.*
+vgcore.*
+
+# Profiling
+*.gcda
+*.gcno
+*.gcov
+gmon.out
+perf.data
+perf.data.old
+
+# Package files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Wrapper script (user specific)
+run_panorama.sh

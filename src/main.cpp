@@ -1,0 +1,426 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <cstdio>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
+
+#include "feature_detection/feature_detector.h"
+#include "feature_detection/orb_detector.h"
+#include "feature_detection/akaze_detector.h"
+#include "feature_matching/matcher.h"
+#include "feature_matching/ransac.h"
+#include "homography/homography_estimator.h"
+#include "stitching/image_warper.h"
+#include "stitching/blender.h"
+#include "experiments/experiment_runner.h"
+
+void printUsage(const char* program_name) {
+    std::cout << "Usage: " << program_name << " [options]\n"
+              << "Options:\n"
+              << "  --stitch <img1> <img2>       : Stitch two images\n"
+              << "  --stitch-multiple <img1> ...  : Stitch multiple images\n"
+              << "  --experiment-mode            : Run all experiments\n"
+              << "  --detector <orb|akaze>       : Choose feature detector (default: orb)\n"
+              << "  --blend-mode <mode>          : Choose blend mode (simple|feather|multiband)\n"
+              << "  --ransac-threshold <value>   : Set RANSAC threshold (default: 3.0)\n"
+              << "  --max-features <num>         : Set max features (default: 2000)\n"
+              << "  --output <path>              : Output path for panorama\n"
+              << "  --visualize                  : Show intermediate results\n"
+              << "  --help                       : Show this message\n";
+}
+
+// Forward declaration
+cv::Mat performStitchingDirect(
+    const cv::Mat& img1,
+    const cv::Mat& img2,
+    const std::string& detector_type,
+    const std::string& blend_mode,
+    double ransac_threshold,
+    int max_features,
+    bool visualize,
+    int max_panorama_dimension = 10000
+);
+
+cv::Mat performStitching(
+    const std::string& img1_path,
+    const std::string& img2_path,
+    const std::string& detector_type = "orb",
+    const std::string& blend_mode = "feather",
+    double ransac_threshold = 3.0,
+    int max_features = 2000,
+    bool visualize = false
+) {
+    // Load images
+    cv::Mat img1 = cv::imread(img1_path);
+    cv::Mat img2 = cv::imread(img2_path);
+    
+    if (img1.empty() || img2.empty()) {
+        std::cerr << "Error: Could not load images\n";
+        return cv::Mat();
+    }
+    
+    return performStitchingDirect(img1, img2, detector_type, blend_mode, 
+                                  ransac_threshold, max_features, visualize, 10000);
+}
+
+// Direct stitching function that works with cv::Mat to avoid JPEG compression
+cv::Mat performStitchingDirect(
+    const cv::Mat& img1,
+    const cv::Mat& img2,
+    const std::string& detector_type,
+    const std::string& blend_mode,
+    double ransac_threshold,
+    int max_features,
+    bool visualize,
+    int max_panorama_dimension
+) {
+    
+    // Comprehensive input validation
+    if (img1.empty() || img2.empty()) {
+        std::cerr << "Error: One or both input images are empty\n";
+        return cv::Mat();
+    }
+    
+    if (img1.type() != CV_8UC3 || img2.type() != CV_8UC3) {
+        std::cerr << "Error: Input images must be 8-bit 3-channel (BGR)\n";
+        return cv::Mat();
+    }
+    
+    if (img1.cols < 50 || img1.rows < 50 || img2.cols < 50 || img2.rows < 50) {
+        std::cerr << "Error: Images too small (minimum 50x50 pixels)\n";
+        return cv::Mat();
+    }
+    
+    if (ransac_threshold <= 0 || ransac_threshold > 50) {
+        std::cerr << "Warning: Invalid RANSAC threshold, using default 3.0\n";
+        ransac_threshold = 3.0;
+    }
+    
+    if (max_features < 10 || max_features > 50000) {
+        std::cerr << "Warning: Invalid max_features, using default 2000\n";
+        max_features = 2000;
+    }
+    
+    std::cout << "Loaded images: " << img1.size() << " and " << img2.size() << "\n";
+    
+    // Create feature detector
+    std::unique_ptr<FeatureDetector> detector;
+    if (detector_type == "orb") {
+        detector = std::make_unique<ORBDetector>();
+    } else if (detector_type == "akaze") {
+        detector = std::make_unique<AKAZEDetector>();
+    } else {
+        std::cerr << "Unknown detector type: " << detector_type << "\n";
+        return cv::Mat();
+    }
+    detector->setMaxFeatures(max_features);
+    
+    // Detect features
+    std::cout << "Detecting features...\n";
+    auto result1 = detector->detect(img1);
+    auto result2 = detector->detect(img2);
+    
+    std::cout << "Detected " << result1.getKeypointCount() << " and " 
+              << result2.getKeypointCount() << " keypoints\n";
+    
+    // Match features
+    std::cout << "Matching features...\n";
+    FeatureMatcher matcher;
+    auto match_result = matcher.matchFeatures(
+        result1.descriptors, result2.descriptors,
+        result1.keypoints, result2.keypoints
+    );
+    
+    std::cout << "Found " << match_result.num_good_matches << " good matches\n";
+    
+    // Estimate homography
+    std::cout << "Estimating homography...\n";
+    HomographyEstimator h_estimator;
+    h_estimator.setRANSACThreshold(ransac_threshold);
+    
+    std::vector<cv::DMatch> inlier_matches;
+    cv::Mat homography = h_estimator.estimateHomography(
+        result1.keypoints, result2.keypoints,
+        match_result.good_matches, inlier_matches
+    );
+    
+    auto ransac_result = h_estimator.getLastResult();
+    std::cout << "RANSAC found " << ransac_result.num_inliers 
+              << " inliers (" << ransac_result.inlier_ratio * 100 << "%)\n";
+    
+    if (homography.empty()) {
+        std::cerr << "Failed to compute homography\n";
+        return cv::Mat();
+    }
+    
+    // Visualize matches if requested
+    if (visualize) {
+        cv::Mat match_img = matcher.visualizeMatches(
+            img1, img2, result1.keypoints, result2.keypoints, inlier_matches
+        );
+        cv::imshow("Inlier Matches", match_img);
+        cv::waitKey(0);
+    }
+    
+    // Warp images
+    std::cout << "Warping images...\n";
+    ImageWarper warper;
+    
+    // Calculate proper bounds with translation
+    // Note: homography maps img1 -> img2, but we need img2 -> img1 for warping
+    cv::Mat H_inv;
+    try {
+        H_inv = homography.inv();
+    } catch (const cv::Exception& e) {
+        std::cerr << "Failed to invert homography: " << e.what() << std::endl;
+        return cv::Mat();
+    }
+    
+    std::vector<cv::Point2f> corners2(4);
+    corners2[0] = cv::Point2f(0, 0);
+    corners2[1] = cv::Point2f(static_cast<float>(img2.cols), 0);
+    corners2[2] = cv::Point2f(static_cast<float>(img2.cols), static_cast<float>(img2.rows));
+    corners2[3] = cv::Point2f(0, static_cast<float>(img2.rows));
+    
+    std::vector<cv::Point2f> corners2_transformed;
+    cv::perspectiveTransform(corners2, corners2_transformed, H_inv);
+    
+    // Find min/max coordinates
+    float min_x = 0, max_x = static_cast<float>(img1.cols);
+    float min_y = 0, max_y = static_cast<float>(img1.rows);
+    
+    for (const auto& pt : corners2_transformed) {
+        min_x = std::min(min_x, pt.x);
+        max_x = std::max(max_x, pt.x);
+        min_y = std::min(min_y, pt.y);
+        max_y = std::max(max_y, pt.y);
+    }
+    
+    // Create translation matrix to shift everything to positive coordinates
+    cv::Mat translation = (cv::Mat_<double>(3, 3) << 
+        1, 0, -min_x,
+        0, 1, -min_y,
+        0, 0, 1);
+    
+    // Calculate output size
+    cv::Size panorama_size(
+        static_cast<int>(max_x - min_x) + 10,
+        static_cast<int>(max_y - min_y) + 10
+    );
+    
+    // Limit extreme transformations - if bounds are too large, likely bad homography
+    if (panorama_size.width <= 0 || panorama_size.height <= 0) {
+        std::cerr << "Invalid panorama size (negative)" << std::endl;
+        return cv::Mat();
+    }
+    
+    // If transformation is extreme, clamp to configurable size
+    if (panorama_size.width > max_panorama_dimension || panorama_size.height > max_panorama_dimension) {
+        std::cerr << "Warning: Large panorama size " << panorama_size.width 
+                  << "x" << panorama_size.height << ", clamping to " << max_panorama_dimension << std::endl;
+        panorama_size.width = std::min(panorama_size.width, max_panorama_dimension);
+        panorama_size.height = std::min(panorama_size.height, max_panorama_dimension);
+    }
+    
+    // Create output panorama
+    cv::Mat panorama = cv::Mat::zeros(panorama_size, img1.type());
+    cv::Mat mask1 = cv::Mat::zeros(panorama_size, CV_8UC1);
+    cv::Mat mask2 = cv::Mat::zeros(panorama_size, CV_8UC1);
+    
+    // Warp first image with translation
+    cv::Mat warped1;
+    cv::warpPerspective(img1, warped1, translation, panorama_size);
+    cv::warpPerspective(cv::Mat::ones(img1.size(), CV_8UC1) * 255, 
+                       mask1, translation, panorama_size);
+    
+    // Warp second image with inverse homography (img2 -> img1 coordinate system)
+    cv::Mat warped2;
+    cv::Mat warped_mask2;
+    cv::warpPerspective(img2, warped2, translation * H_inv, panorama_size);
+    cv::warpPerspective(cv::Mat::ones(img2.size(), CV_8UC1) * 255, 
+                       warped_mask2, translation * H_inv, panorama_size);
+    
+    // Blend images
+    std::cout << "Blending images...\n";
+    Blender blender;
+    
+    if (blend_mode == "simple") {
+        blender.setBlendMode(BlendMode::SIMPLE_OVERLAY);
+    } else if (blend_mode == "feather") {
+        blender.setBlendMode(BlendMode::FEATHERING);
+    } else if (blend_mode == "multiband") {
+        blender.setBlendMode(BlendMode::MULTIBAND);
+    }
+    
+    panorama = blender.blend(warped1, warped2, mask1, warped_mask2);
+    
+    std::cout << "Panorama created successfully!\n";
+    
+    return panorama;
+}
+
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        printUsage(argv[0]);
+        return 1;
+    }
+    
+    std::string mode = argv[1];
+    
+    if (mode == "--help") {
+        printUsage(argv[0]);
+        return 0;
+    }
+    
+    if (mode == "--experiment-mode") {
+        std::cout << "Running experiments...\n";
+        ExperimentRunner runner;
+        runner.runAllExperiments();
+        runner.saveResults("results/");
+        runner.generateReport("results/experiment_report.pdf");
+        return 0;
+    }
+    
+    if (mode == "--stitch" && argc >= 4) {
+        std::string img1_path = argv[2];
+        std::string img2_path = argv[3];
+        
+        // Parse optional parameters
+        std::string detector_type = "orb";
+        std::string blend_mode = "feather";
+        double ransac_threshold = 3.0;
+        int max_features = 2000;
+        std::string output_path = "panorama.jpg";
+        bool visualize = false;
+        
+        for (int i = 4; i < argc; i++) {
+            std::string arg = argv[i];
+            if (arg == "--detector" && i + 1 < argc) {
+                detector_type = argv[++i];
+            } else if (arg == "--blend-mode" && i + 1 < argc) {
+                blend_mode = argv[++i];
+            } else if (arg == "--ransac-threshold" && i + 1 < argc) {
+                ransac_threshold = std::stod(argv[++i]);
+            } else if (arg == "--max-features" && i + 1 < argc) {
+                max_features = std::stoi(argv[++i]);
+            } else if (arg == "--output" && i + 1 < argc) {
+                output_path = argv[++i];
+            } else if (arg == "--visualize") {
+                visualize = true;
+            }
+        }
+        
+        cv::Mat panorama = performStitching(
+            img1_path, img2_path,
+            detector_type, blend_mode,
+            ransac_threshold, max_features,
+            visualize
+        );
+        
+        if (!panorama.empty()) {
+            cv::imwrite(output_path, panorama);
+            std::cout << "Panorama saved to: " << output_path << "\n";
+            
+            if (visualize) {
+                cv::imshow("Panorama", panorama);
+                cv::waitKey(0);
+            }
+        }
+        
+        return 0;
+    }
+    
+    if (mode == "--stitch-multiple" && argc >= 4) {
+        std::vector<std::string> image_paths;
+        for (int i = 2; i < argc; i++) {
+            if (argv[i][0] == '-') {
+                break;  // Stop collecting paths when we hit the next option
+            }
+            image_paths.push_back(argv[i]);
+        }
+        
+        if (image_paths.size() < 3) {
+            std::cerr << "Need at least 3 images for multi-image stitching\n";
+            return 1;
+        }
+        
+        // Parse optional parameters
+        std::string detector_type = "orb";
+        std::string blend_mode = "feather";
+        double ransac_threshold = 3.0;
+        int max_features = 2000;
+        std::string output_path = "multi_panorama.jpg";
+        bool visualize = false;
+        
+        // Find where options start (after image paths)
+        int option_start = 2 + image_paths.size();
+        for (int i = option_start; i < argc; i++) {
+            std::string arg = argv[i];
+            if (arg == "--detector" && i + 1 < argc) {
+                detector_type = argv[++i];
+            } else if (arg == "--blend-mode" && i + 1 < argc) {
+                blend_mode = argv[++i];
+            } else if (arg == "--ransac-threshold" && i + 1 < argc) {
+                ransac_threshold = std::stod(argv[++i]);
+            } else if (arg == "--max-features" && i + 1 < argc) {
+                max_features = std::stoi(argv[++i]);
+            } else if (arg == "--output" && i + 1 < argc) {
+                output_path = argv[++i];
+            } else if (arg == "--visualize") {
+                visualize = true;
+            }
+        }
+        
+        std::cout << "Multi-image stitching with " << image_paths.size() << " images\n";
+        
+        // Load all images
+        std::vector<cv::Mat> images;
+        for (const auto& path : image_paths) {
+            cv::Mat img = cv::imread(path);
+            if (img.empty()) {
+                std::cerr << "Error: Could not load image " << path << "\n";
+                return 1;
+            }
+            images.push_back(img);
+            std::cout << "Loaded: " << path << " [" << img.size() << "]\n";
+        }
+        
+        // Start with the first image as the base panorama
+        cv::Mat panorama = images[0].clone();
+        
+        // Sequentially stitch each image to the accumulated panorama
+        for (size_t i = 1; i < images.size(); i++) {
+            std::cout << "\n=== Stitching image " << (i + 1) << " of " << images.size() << " ===\n";
+            
+            // Use direct stitching to avoid JPEG compression artifacts
+            cv::Mat result = performStitchingDirect(
+                panorama, images[i],
+                detector_type, blend_mode,
+                ransac_threshold, max_features,
+                visualize, 10000
+            );
+            
+            if (result.empty()) {
+                std::cerr << "Failed to stitch image " << (i + 1) << "\n";
+                return 1;
+            }
+            
+            panorama = result;
+        }
+        
+        // Save the final panorama
+        if (!output_path.empty()) {
+            cv::imwrite(output_path, panorama);
+            std::cout << "\nMulti-image panorama saved to: " << output_path << "\n";
+        } else {
+            cv::imwrite("multi_panorama.jpg", panorama);
+            std::cout << "\nMulti-image panorama saved to: multi_panorama.jpg\n";
+        }
+        
+        return 0;
+    }
+    
+    printUsage(argv[0]);
+    return 1;
+}

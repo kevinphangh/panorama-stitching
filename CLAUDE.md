@@ -1,0 +1,79 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Visual Computing Assignment 1 - Real-time panorama stitching system implementing feature detection, matching, homography estimation, and image warping with experimental evaluation framework.
+
+## Build Commands
+
+```bash
+# Quick build (recommended)
+./build.sh
+
+# Manual build
+mkdir -p build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+
+# Debug build
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+make -j$(nproc)
+
+# Clean rebuild
+rm -rf build && ./build.sh
+```
+
+## Development Commands
+
+```bash
+# Run panorama stitcher (use wrapper to avoid library conflicts)
+./run_panorama.sh --stitch img1.jpg img2.jpg --output result.jpg
+
+# Multi-image stitching (3+ images)
+./run_panorama.sh --stitch-multiple img1.jpg img2.jpg img3.jpg --output panorama.jpg
+
+# Run with specific detector and blending
+./run_panorama.sh --stitch img1.jpg img2.jpg --detector akaze --blend-mode multiband
+
+# Run experiments
+./run_panorama.sh --experiment-mode
+
+# Run tests (when implemented)
+cd build && ctest
+```
+
+## Architecture Overview
+
+The codebase follows a modular pipeline architecture:
+
+1. **Feature Detection** (`src/feature_detection/`): Abstract `FeatureDetector` base class with ORB and AKAZE implementations. Detectors extract keypoints and descriptors from input images.
+
+2. **Feature Matching** (`src/feature_matching/`): `Matcher` class performs brute-force matching with Lowe's ratio test. `RANSAC` class filters matches using homography estimation to remove outliers.
+
+3. **Homography Estimation** (`src/homography/`): `HomographyEstimator` implements Direct Linear Transform (DLT) for computing homography matrices from point correspondences.
+
+4. **Image Warping & Blending** (`src/stitching/`): `ImageWarper` applies perspective transformations. `Blender` supports three modes: simple overlay, feathering, and multiband (Laplacian pyramid) blending.
+
+5. **Experiment Framework** (`src/experiments/`): `ExperimentRunner` executes performance evaluations across different datasets and parameter configurations, collecting timing and quality metrics.
+
+The main application (`src/main.cpp`) provides a CLI interface that orchestrates these components. All modules use OpenCV for core computer vision operations and support configurable parameters for experimentation.
+
+## Key Implementation Details
+
+- **C++17** with OpenCV 4.x for computer vision operations
+- Template-based timing utilities for performance measurement
+- RANSAC uses adaptive iteration count based on inlier ratio
+- Multiband blending uses 5-level Laplacian pyramids
+- Thread-safe operations for potential parallelization
+- Configurable parameters: detector type, blend mode, RANSAC threshold, output format
+
+## Testing Datasets
+
+Three test datasets in `datasets/`:
+- `indoor_scene1/`: Indoor environment images
+- `outdoor_scene1/`: Outdoor scene set 1
+- `outdoor_scene2/`: Outdoor scene set 2
+
+Each contains multiple images for panorama stitching experiments.
