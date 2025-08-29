@@ -9,7 +9,7 @@ public:
     AKAZEDetector();
     DetectionResult detect(const cv::Mat& image) override;
     std::string getName() const override { return "AKAZE"; }
-    void setMaxFeatures(int max_features);
+    void setMaxFeatures(int max_features) override;
     
 private:
     cv::Ptr<cv::AKAZE> detector_;

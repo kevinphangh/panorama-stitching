@@ -25,7 +25,7 @@ public:
     virtual DetectionResult detect(const cv::Mat& image) = 0;
     virtual std::string getName() const = 0;
     
-    void setMaxFeatures(int max_features) { max_features_ = max_features; }
+    virtual void setMaxFeatures(int max_features) { max_features_ = max_features; }
     int getMaxFeatures() const { return max_features_; }
     
     

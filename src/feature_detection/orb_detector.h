@@ -9,7 +9,7 @@ public:
     ORBDetector();
     DetectionResult detect(const cv::Mat& image) override;
     std::string getName() const override { return "ORB"; }
-    void setMaxFeatures(int max_features);
+    void setMaxFeatures(int max_features) override;
     
 private:
     cv::Ptr<cv::ORB> detector_;
