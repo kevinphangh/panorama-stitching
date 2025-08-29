@@ -104,22 +104,46 @@ cv::Mat performStitchingDirect(
     
     std::cout << "Loaded images: " << img1.size() << " and " << img2.size() << "\n";
     
-    // Create feature detector
-    std::unique_ptr<FeatureDetector> detector;
+    // Adaptively scale max_features based on image size
+    // Larger images (panoramas) need more features for good matching
+    int img1_pixels = img1.rows * img1.cols;
+    int img2_pixels = img2.rows * img2.cols;
+    int base_pixels = 1536 * 2048;  // Reference size of original images
+    
+    int adaptive_features1 = max_features;
+    int adaptive_features2 = max_features;
+    
+    // Scale up features for panoramas (which are larger)
+    if (img1_pixels > base_pixels * 1.5) {
+        adaptive_features1 = static_cast<int>(max_features * std::sqrt(static_cast<double>(img1_pixels) / base_pixels));
+        std::cout << "Scaling features for panorama: " << adaptive_features1 << " (from " << max_features << ")\n";
+    }
+    if (img2_pixels > base_pixels * 1.5) {
+        adaptive_features2 = static_cast<int>(max_features * std::sqrt(static_cast<double>(img2_pixels) / base_pixels));
+    }
+    
+    // Create feature detectors with adaptive feature counts
+    std::unique_ptr<FeatureDetector> detector1;
+    std::unique_ptr<FeatureDetector> detector2;
+    
     if (detector_type == "orb") {
-        detector = std::make_unique<ORBDetector>();
+        detector1 = std::make_unique<ORBDetector>();
+        detector2 = std::make_unique<ORBDetector>();
     } else if (detector_type == "akaze") {
-        detector = std::make_unique<AKAZEDetector>();
+        detector1 = std::make_unique<AKAZEDetector>();
+        detector2 = std::make_unique<AKAZEDetector>();
     } else {
         std::cerr << "Unknown detector type: " << detector_type << "\n";
         return cv::Mat();
     }
-    detector->setMaxFeatures(max_features);
+    
+    detector1->setMaxFeatures(adaptive_features1);
+    detector2->setMaxFeatures(adaptive_features2);
     
     // Detect features
     std::cout << "Detecting features...\n";
-    auto result1 = detector->detect(img1);
-    auto result2 = detector->detect(img2);
+    auto result1 = detector1->detect(img1);
+    auto result2 = detector2->detect(img2);
     
     std::cout << "Detected " << result1.getKeypointCount() << " and " 
               << result2.getKeypointCount() << " keypoints\n";
@@ -427,27 +451,65 @@ int main(int argc, char** argv) {
             std::cout << "Loaded: " << path << " [" << img.size() << "]\n";
         }
         
-        // Start with the first image as the base panorama
-        cv::Mat panorama = images[0].clone();
+        // For 3 images, use middle image as reference for better results
+        cv::Mat panorama;
         
-        // Sequentially stitch each image to the accumulated panorama
-        for (size_t i = 1; i < images.size(); i++) {
-            std::cout << "\n=== Stitching image " << (i + 1) << " of " << images.size() << " ===\n";
+        if (images.size() == 3) {
+            std::cout << "\n=== Using reference-based stitching (img2 as center) ===\n";
             
-            // Use direct stitching to avoid JPEG compression artifacts
-            cv::Mat result = performStitchingDirect(
-                panorama, images[i],
+            // First stitch img1 to img2 (left side)
+            std::cout << "\n--- Stitching img1 to img2 (left side) ---\n";
+            cv::Mat left_stitch = performStitchingDirect(
+                images[1], images[0],  // img2, img1 - note reversed order
                 detector_type, blend_mode,
                 ransac_threshold, max_features,
                 visualize, 10000
             );
             
-            if (result.empty()) {
-                std::cerr << "Failed to stitch image " << (i + 1) << "\n";
-                return 1;
+            if (left_stitch.empty()) {
+                std::cout << "Failed to stitch img1 to img2, trying sequential approach...\n";
+                goto sequential_approach;
             }
             
-            panorama = result;
+            // Then stitch img3 to the result (right side)
+            std::cout << "\n--- Stitching img3 to panorama (right side) ---\n";
+            panorama = performStitchingDirect(
+                left_stitch, images[2],  // left_stitch, img3
+                detector_type, blend_mode,
+                ransac_threshold, max_features,
+                visualize, 10000
+            );
+            
+            if (panorama.empty()) {
+                std::cout << "Failed to stitch img3, trying sequential approach...\n";
+                goto sequential_approach;
+            }
+        } else {
+            sequential_approach:
+            std::cout << "\n=== Using sequential stitching ===\n";
+            
+            // Start with the first image as the base panorama
+            panorama = images[0].clone();
+            
+            // Sequentially stitch each image to the accumulated panorama
+            for (size_t i = 1; i < images.size(); i++) {
+                std::cout << "\n=== Stitching image " << (i + 1) << " of " << images.size() << " ===\n";
+                
+                // Use direct stitching to avoid JPEG compression artifacts
+                cv::Mat result = performStitchingDirect(
+                    panorama, images[i],
+                    detector_type, blend_mode,
+                    ransac_threshold, max_features,
+                    visualize, 10000
+                );
+                
+                if (result.empty()) {
+                    std::cerr << "Failed to stitch image " << (i + 1) << "\n";
+                    return 1;
+                }
+                
+                panorama = result;
+            }
         }
         
         // Save the final panorama
