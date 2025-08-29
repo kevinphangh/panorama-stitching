@@ -12,8 +12,10 @@ void AKAZEDetector::createDetector() {
 }
 
 void AKAZEDetector::setMaxFeatures(int max_features) {
-    max_features_ = max_features;
-    createDetector();  // Recreate detector with new settings
+    if (max_features != max_features_) {
+        max_features_ = max_features;
+        // Note: AKAZE doesn't have a max_features parameter, we limit post-detection
+    }
 }
 
 DetectionResult AKAZEDetector::detect(const cv::Mat& image) {

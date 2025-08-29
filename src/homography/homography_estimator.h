@@ -33,9 +33,6 @@ private:
     double ransac_threshold_ = 3.0;
     double ransac_confidence_ = 0.995;
     RANSACResult last_result_;
-    
-    cv::Mat normalizePoints(std::vector<cv::Point2f>& points);
-    void denormalizeHomography(cv::Mat& H, const cv::Mat& T1, const cv::Mat& T2);
 };
 
 #endif
