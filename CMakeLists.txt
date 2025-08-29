@@ -66,17 +66,6 @@ if(OpenMP_CXX_FOUND)
     target_link_libraries(panorama_stitcher OpenMP::OpenMP_CXX)
 endif()
 
-# Add test executable (optional)
-option(BUILD_TESTS "Build unit tests" OFF)
-if(BUILD_TESTS)
-    if(EXISTS "${CMAKE_SOURCE_DIR}/tests/unit_tests.cpp")
-        add_executable(unit_tests tests/unit_tests.cpp)
-        target_link_libraries(unit_tests ${OpenCV_LIBS} Threads::Threads)
-        enable_testing()
-        add_test(NAME UnitTests COMMAND unit_tests)
-    endif()
-endif()
-
 # Installation rules
 install(TARGETS panorama_stitcher DESTINATION bin)
 

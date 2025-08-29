@@ -1,12 +1,13 @@
 #include "homography_estimator.h"
+#include "../config.h"
 #include <opencv2/calib3d.hpp>
 #include <cmath>
 #include <iostream>
 #include <limits>
 
 HomographyEstimator::HomographyEstimator() {
-    ransac_threshold_ = 3.0;
-    ransac_confidence_ = 0.995;
+    ransac_threshold_ = PanoramaConfig::DEFAULT_RANSAC_THRESHOLD;
+    ransac_confidence_ = PanoramaConfig::DEFAULT_RANSAC_CONFIDENCE;
 }
 
 cv::Mat HomographyEstimator::estimateHomography(
@@ -97,13 +98,13 @@ cv::Rect HomographyEstimator::calculateOutputBounds(
     }
     
     // Add padding and ensure positive dimensions
-    int padding = 10;
+    int padding = PanoramaConfig::PANORAMA_PADDING;
     int width = static_cast<int>(std::ceil(max_x - min_x)) + padding * 2;
     int height = static_cast<int>(std::ceil(max_y - min_y)) + padding * 2;
     
-    // Limit maximum size
-    width = std::min(width, 5000);
-    height = std::min(height, 5000);
+    // Limit maximum size (using same limit as main.cpp for consistency)
+    width = std::min(width, PanoramaConfig::MAX_PANORAMA_DIMENSION);
+    height = std::min(height, PanoramaConfig::MAX_PANORAMA_DIMENSION);
     
     return cv::Rect(0, 0, width, height);
 }

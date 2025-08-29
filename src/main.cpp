@@ -7,6 +7,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 
+#include "config.h"
 #include "feature_detection/feature_detector.h"
 #include "feature_detection/orb_detector.h"
 #include "feature_detection/akaze_detector.h"
@@ -32,58 +33,29 @@ void printUsage(const char* program_name) {
               << "  --help                       : Show this message\n";
 }
 
-// Configuration constants (will be moved to config file later)
-struct StitchingConfig {
-    static constexpr int DEFAULT_MAX_FEATURES = 2000;
-    static constexpr double DEFAULT_RANSAC_THRESHOLD = 3.0;
-    static constexpr int MAX_PANORAMA_DIMENSION = 10000;
-    static constexpr int PANORAMA_PADDING = 10;
-    static constexpr int MIN_INLIERS_REQUIRED = 20;
-};
-
-// Simple logging framework
-enum class LogLevel {
-    DEBUG = 0,
-    INFO = 1,
-    WARNING = 2,
-    ERROR = 3,
-    NONE = 4
-};
-
-class Logger {
-private:
-    static LogLevel current_level;
-    
-public:
-    static void setLevel(LogLevel level) { current_level = level; }
-    
-    static void debug(const std::string& msg) {
-        if (current_level <= LogLevel::DEBUG) {
-            std::cout << "[DEBUG] " << msg << std::endl;
-        }
+// Validate output path for security (prevent path traversal)
+bool isValidOutputPath(const std::string& path) {
+    // Check for path traversal attempts
+    if (path.find("..") != std::string::npos) {
+        std::cerr << "Error: Path traversal detected in output path\n";
+        return false;
     }
     
-    static void info(const std::string& msg) {
-        if (current_level <= LogLevel::INFO) {
-            std::cout << "[INFO] " << msg << std::endl;
-        }
+    // Check for absolute paths to system directories
+    if (path[0] == '/' && 
+        (path.find("/etc") == 0 || 
+         path.find("/usr") == 0 || 
+         path.find("/bin") == 0 ||
+         path.find("/sbin") == 0 ||
+         path.find("/boot") == 0 ||
+         path.find("/sys") == 0 ||
+         path.find("/proc") == 0)) {
+        std::cerr << "Error: Cannot write to system directories\n";
+        return false;
     }
     
-    static void warning(const std::string& msg) {
-        if (current_level <= LogLevel::WARNING) {
-            std::cerr << "[WARN] " << msg << std::endl;
-        }
-    }
-    
-    static void error(const std::string& msg) {
-        if (current_level <= LogLevel::ERROR) {
-            std::cerr << "[ERROR] " << msg << std::endl;
-        }
-    }
-};
-
-// Initialize default log level
-LogLevel Logger::current_level = LogLevel::INFO;
+    return true;
+}
 
 // Safe command-line argument parsing with exception handling
 template<typename T>
@@ -141,6 +113,20 @@ bool parseInt(const std::string& arg, int& value, const std::string& param_name,
     return true;
 }
 
+// Helper function to calculate adaptive features based on image size
+int calculateAdaptiveFeatures(int image_pixels, int max_features) {
+    int base_pixels = PanoramaConfig::REFERENCE_IMAGE_HEIGHT * PanoramaConfig::REFERENCE_IMAGE_WIDTH;
+    
+    // Scale up features for larger images (panoramas)
+    if (image_pixels > base_pixels * PanoramaConfig::PANORAMA_SCALE_THRESHOLD) {
+        int adaptive_features = static_cast<int>(max_features * std::sqrt(static_cast<double>(image_pixels) / base_pixels));
+        std::cout << "Scaling features for large image: " << adaptive_features << " (from " << max_features << ")\n";
+        return adaptive_features;
+    }
+    
+    return max_features;
+}
+
 // Forward declarations
 cv::Mat performStitchingDirect(
     const cv::Mat& img1,
@@ -150,7 +136,7 @@ cv::Mat performStitchingDirect(
     double ransac_threshold,
     int max_features,
     bool visualize,
-    int max_panorama_dimension = StitchingConfig::MAX_PANORAMA_DIMENSION
+    int max_panorama_dimension = PanoramaConfig::MAX_PANORAMA_DIMENSION
 );
 
 cv::Mat performSequentialStitching(
@@ -176,12 +162,12 @@ cv::Mat performStitching(
     cv::Mat img2 = cv::imread(img2_path);
     
     if (img1.empty() || img2.empty()) {
-        Logger::error("Could not load images: " + img1_path + " or " + img2_path);
+        std::cerr << "Error: Could not load images: " << img1_path << " or " << img2_path << "\n";
         return cv::Mat();
     }
     
     return performStitchingDirect(img1, img2, detector_type, blend_mode, 
-                                  ransac_threshold, max_features, visualize, 10000);
+                                  ransac_threshold, max_features, visualize, PanoramaConfig::MAX_PANORAMA_DIMENSION);
 }
 
 // Direct stitching function that works with cv::Mat to avoid JPEG compression
@@ -207,40 +193,43 @@ cv::Mat performStitchingDirect(
         return cv::Mat();
     }
     
-    if (img1.cols < 50 || img1.rows < 50 || img2.cols < 50 || img2.rows < 50) {
-        std::cerr << "Error: Images too small (minimum 50x50 pixels)\n";
+    if (img1.cols < PanoramaConfig::MIN_IMAGE_DIMENSION || img1.rows < PanoramaConfig::MIN_IMAGE_DIMENSION || 
+        img2.cols < PanoramaConfig::MIN_IMAGE_DIMENSION || img2.rows < PanoramaConfig::MIN_IMAGE_DIMENSION) {
+        std::cerr << "Error: Images too small (minimum " << PanoramaConfig::MIN_IMAGE_DIMENSION << "x" << PanoramaConfig::MIN_IMAGE_DIMENSION << " pixels)\n";
         return cv::Mat();
     }
     
-    if (ransac_threshold <= 0 || ransac_threshold > 50) {
-        std::cerr << "Warning: Invalid RANSAC threshold, using default 3.0\n";
-        ransac_threshold = 3.0;
+    if (ransac_threshold <= 0 || ransac_threshold > PanoramaConfig::MAX_RANSAC_THRESHOLD) {
+        std::cerr << "Warning: Invalid RANSAC threshold, using default " << PanoramaConfig::DEFAULT_RANSAC_THRESHOLD << "\n";
+        ransac_threshold = PanoramaConfig::DEFAULT_RANSAC_THRESHOLD;
     }
     
-    if (max_features < 10 || max_features > 50000) {
-        std::cerr << "Warning: Invalid max_features, using default 2000\n";
-        max_features = 2000;
+    if (max_features < PanoramaConfig::MIN_FEATURES || max_features > PanoramaConfig::MAX_FEATURES) {
+        std::cerr << "Warning: Invalid max_features, using default " << PanoramaConfig::DEFAULT_MAX_FEATURES << "\n";
+        max_features = PanoramaConfig::DEFAULT_MAX_FEATURES;
     }
     
     std::cout << "Loaded images: " << img1.size() << " and " << img2.size() << "\n";
+    
+    // Check for excessive memory usage
+    size_t total_pixels = static_cast<size_t>(img1.rows) * img1.cols + 
+                         static_cast<size_t>(img2.rows) * img2.cols;
+    if (total_pixels > PanoramaConfig::MAX_IMAGE_PIXELS) {
+        std::cerr << "Error: Combined image size exceeds maximum allowed (" 
+                  << PanoramaConfig::MAX_IMAGE_PIXELS / 1000000 << " megapixels)\n";
+        return cv::Mat();
+    }
+    if (total_pixels > PanoramaConfig::WARNING_IMAGE_PIXELS) {
+        std::cerr << "Warning: Large image size detected. Processing may be slow.\n";
+    }
     
     // Adaptively scale max_features based on image size
     // Larger images (panoramas) need more features for good matching
     int img1_pixels = img1.rows * img1.cols;
     int img2_pixels = img2.rows * img2.cols;
-    int base_pixels = 1536 * 2048;  // Reference size of original images
     
-    int adaptive_features1 = max_features;
-    int adaptive_features2 = max_features;
-    
-    // Scale up features for panoramas (which are larger)
-    if (img1_pixels > base_pixels * 1.5) {
-        adaptive_features1 = static_cast<int>(max_features * std::sqrt(static_cast<double>(img1_pixels) / base_pixels));
-        std::cout << "Scaling features for panorama: " << adaptive_features1 << " (from " << max_features << ")\n";
-    }
-    if (img2_pixels > base_pixels * 1.5) {
-        adaptive_features2 = static_cast<int>(max_features * std::sqrt(static_cast<double>(img2_pixels) / base_pixels));
-    }
+    int adaptive_features1 = calculateAdaptiveFeatures(img1_pixels, max_features);
+    int adaptive_features2 = calculateAdaptiveFeatures(img2_pixels, max_features);
     
     // Create feature detectors with adaptive feature counts
     std::unique_ptr<FeatureDetector> detector1;
@@ -298,9 +287,20 @@ cv::Mat performStitchingDirect(
         return cv::Mat();
     }
     
+    // Check for NaN or Inf values in homography
+    for (int i = 0; i < homography.rows; i++) {
+        for (int j = 0; j < homography.cols; j++) {
+            double val = homography.at<double>(i, j);
+            if (std::isnan(val) || std::isinf(val)) {
+                std::cerr << "Error: Invalid homography matrix (contains NaN or Inf)\n";
+                return cv::Mat();
+            }
+        }
+    }
+    
     // Validate homography quality
     double det = cv::determinant(homography);
-    if (std::abs(det) < 0.001 || std::abs(det) > 1000) {
+    if (std::abs(det) < PanoramaConfig::MIN_HOMOGRAPHY_DETERMINANT || std::abs(det) > PanoramaConfig::MAX_HOMOGRAPHY_DETERMINANT) {
         std::cerr << "Error: Homography determinant out of reasonable range: " << det << std::endl;
         std::cerr << "This indicates poor feature matches or incompatible images\n";
         std::cerr << "Try: 1) Using ORB detector instead of AKAZE\n";
@@ -319,16 +319,17 @@ cv::Mat performStitchingDirect(
     double scale_y = std::sqrt(H_normalized.at<double>(0,1) * H_normalized.at<double>(0,1) + 
                                H_normalized.at<double>(1,1) * H_normalized.at<double>(1,1));
     
-    if (scale_x < 0.1 || scale_x > 10 || scale_y < 0.1 || scale_y > 10) {
+    if (scale_x < PanoramaConfig::MIN_HOMOGRAPHY_SCALE || scale_x > PanoramaConfig::MAX_HOMOGRAPHY_SCALE || 
+        scale_y < PanoramaConfig::MIN_HOMOGRAPHY_SCALE || scale_y > PanoramaConfig::MAX_HOMOGRAPHY_SCALE) {
         std::cerr << "Error: Homography implies extreme scaling (x=" << scale_x << ", y=" << scale_y << ")\n";
         std::cerr << "Images may not be from the same scene or have insufficient overlap\n";
         return cv::Mat();
     }
     
     // Check for minimum number of inliers
-    if (ransac_result.num_inliers < StitchingConfig::MIN_INLIERS_REQUIRED) {
+    if (ransac_result.num_inliers < PanoramaConfig::MIN_INLIERS_REQUIRED) {
         std::cerr << "Error: Too few inliers (" << ransac_result.num_inliers << ") for reliable stitching\n";
-        std::cerr << "Minimum " << StitchingConfig::MIN_INLIERS_REQUIRED << " inliers required for stable homography\n";
+        std::cerr << "Minimum " << PanoramaConfig::MIN_INLIERS_REQUIRED << " inliers required for stable homography\n";
         return cv::Mat();
     }
     
@@ -383,8 +384,8 @@ cv::Mat performStitchingDirect(
     
     // Calculate output size with padding
     cv::Size panorama_size(
-        static_cast<int>(max_x - min_x) + StitchingConfig::PANORAMA_PADDING * 2,
-        static_cast<int>(max_y - min_y) + StitchingConfig::PANORAMA_PADDING * 2
+        static_cast<int>(max_x - min_x) + PanoramaConfig::PANORAMA_PADDING * 2,
+        static_cast<int>(max_y - min_y) + PanoramaConfig::PANORAMA_PADDING * 2
     );
     
     // Limit extreme transformations - if bounds are too large, likely bad homography
@@ -473,7 +474,7 @@ cv::Mat performSequentialStitching(
             panorama, images[i],
             detector_type, blend_mode,
             ransac_threshold, max_features,
-            visualize, StitchingConfig::MAX_PANORAMA_DIMENSION
+            visualize, PanoramaConfig::MAX_PANORAMA_DIMENSION
         );
         
         if (result.empty()) {
@@ -516,8 +517,8 @@ int main(int argc, char** argv) {
         // Parse optional parameters
         std::string detector_type = "orb";
         std::string blend_mode = "feather";
-        double ransac_threshold = 3.0;
-        int max_features = 2000;
+        double ransac_threshold = PanoramaConfig::DEFAULT_RANSAC_THRESHOLD;
+        int max_features = PanoramaConfig::DEFAULT_MAX_FEATURES;
         std::string output_path = "panorama.jpg";
         bool visualize = false;
         
@@ -528,14 +529,14 @@ int main(int argc, char** argv) {
             } else if (arg == "--blend-mode" && i + 1 < argc) {
                 blend_mode = argv[++i];
             } else if (arg == "--ransac-threshold" && i + 1 < argc) {
-                if (!parseDouble(argv[++i], ransac_threshold, "RANSAC threshold", 0.1, 50.0)) {
-                    std::cerr << "Using default RANSAC threshold: " << StitchingConfig::DEFAULT_RANSAC_THRESHOLD << "\n";
-                    ransac_threshold = StitchingConfig::DEFAULT_RANSAC_THRESHOLD;
+                if (!parseDouble(argv[++i], ransac_threshold, "RANSAC threshold", PanoramaConfig::MIN_RANSAC_THRESHOLD, PanoramaConfig::MAX_RANSAC_THRESHOLD)) {
+                    std::cerr << "Using default RANSAC threshold: " << PanoramaConfig::DEFAULT_RANSAC_THRESHOLD << "\n";
+                    ransac_threshold = PanoramaConfig::DEFAULT_RANSAC_THRESHOLD;
                 }
             } else if (arg == "--max-features" && i + 1 < argc) {
-                if (!parseInt(argv[++i], max_features, "max features", 10, 50000)) {
-                    std::cerr << "Using default max features: " << StitchingConfig::DEFAULT_MAX_FEATURES << "\n";
-                    max_features = StitchingConfig::DEFAULT_MAX_FEATURES;
+                if (!parseInt(argv[++i], max_features, "max features", PanoramaConfig::MIN_FEATURES, PanoramaConfig::MAX_FEATURES)) {
+                    std::cerr << "Using default max features: " << PanoramaConfig::DEFAULT_MAX_FEATURES << "\n";
+                    max_features = PanoramaConfig::DEFAULT_MAX_FEATURES;
                 }
             } else if (arg == "--output" && i + 1 < argc) {
                 output_path = argv[++i];
@@ -552,6 +553,10 @@ int main(int argc, char** argv) {
         );
         
         if (!panorama.empty()) {
+            if (!isValidOutputPath(output_path)) {
+                std::cerr << "Error: Invalid output path specified\n";
+                return 1;
+            }
             cv::imwrite(output_path, panorama);
             std::cout << "Panorama saved to: " << output_path << "\n";
             
@@ -581,8 +586,8 @@ int main(int argc, char** argv) {
         // Parse optional parameters
         std::string detector_type = "orb";
         std::string blend_mode = "feather";
-        double ransac_threshold = 3.0;
-        int max_features = 2000;
+        double ransac_threshold = PanoramaConfig::DEFAULT_RANSAC_THRESHOLD;
+        int max_features = PanoramaConfig::DEFAULT_MAX_FEATURES;
         std::string output_path = "multi_panorama.jpg";
         bool visualize = false;
         
@@ -595,14 +600,14 @@ int main(int argc, char** argv) {
             } else if (arg == "--blend-mode" && i + 1 < argc) {
                 blend_mode = argv[++i];
             } else if (arg == "--ransac-threshold" && i + 1 < argc) {
-                if (!parseDouble(argv[++i], ransac_threshold, "RANSAC threshold", 0.1, 50.0)) {
-                    std::cerr << "Using default RANSAC threshold: " << StitchingConfig::DEFAULT_RANSAC_THRESHOLD << "\n";
-                    ransac_threshold = StitchingConfig::DEFAULT_RANSAC_THRESHOLD;
+                if (!parseDouble(argv[++i], ransac_threshold, "RANSAC threshold", PanoramaConfig::MIN_RANSAC_THRESHOLD, PanoramaConfig::MAX_RANSAC_THRESHOLD)) {
+                    std::cerr << "Using default RANSAC threshold: " << PanoramaConfig::DEFAULT_RANSAC_THRESHOLD << "\n";
+                    ransac_threshold = PanoramaConfig::DEFAULT_RANSAC_THRESHOLD;
                 }
             } else if (arg == "--max-features" && i + 1 < argc) {
-                if (!parseInt(argv[++i], max_features, "max features", 10, 50000)) {
-                    std::cerr << "Using default max features: " << StitchingConfig::DEFAULT_MAX_FEATURES << "\n";
-                    max_features = StitchingConfig::DEFAULT_MAX_FEATURES;
+                if (!parseInt(argv[++i], max_features, "max features", PanoramaConfig::MIN_FEATURES, PanoramaConfig::MAX_FEATURES)) {
+                    std::cerr << "Using default max features: " << PanoramaConfig::DEFAULT_MAX_FEATURES << "\n";
+                    max_features = PanoramaConfig::DEFAULT_MAX_FEATURES;
                 }
             } else if (arg == "--output" && i + 1 < argc) {
                 output_path = argv[++i];
@@ -638,7 +643,7 @@ int main(int argc, char** argv) {
                 images[1], images[0],  // img2, img1 - note reversed order
                 detector_type, blend_mode,
                 ransac_threshold, max_features,
-                visualize, StitchingConfig::MAX_PANORAMA_DIMENSION
+                visualize, PanoramaConfig::MAX_PANORAMA_DIMENSION
             );
             
             if (!left_stitch.empty()) {
@@ -648,7 +653,7 @@ int main(int argc, char** argv) {
                     left_stitch, images[2],  // left_stitch, img3
                     detector_type, blend_mode,
                     ransac_threshold, max_features,
-                    visualize, StitchingConfig::MAX_PANORAMA_DIMENSION
+                    visualize, PanoramaConfig::MAX_PANORAMA_DIMENSION
                 );
                 
                 if (panorama.empty()) {
@@ -678,6 +683,10 @@ int main(int argc, char** argv) {
         
         // Save the final panorama
         if (!output_path.empty()) {
+            if (!isValidOutputPath(output_path)) {
+                std::cerr << "Error: Invalid output path specified\n";
+                return 1;
+            }
             cv::imwrite(output_path, panorama);
             std::cout << "\nMulti-image panorama saved to: " << output_path << "\n";
         } else {

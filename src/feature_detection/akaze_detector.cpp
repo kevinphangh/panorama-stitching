@@ -14,7 +14,10 @@ void AKAZEDetector::createDetector() {
 void AKAZEDetector::setMaxFeatures(int max_features) {
     if (max_features != max_features_) {
         max_features_ = max_features;
-        // Note: AKAZE doesn't have a max_features parameter, we limit post-detection
+        // Note: AKAZE doesn't have a native max_features parameter like ORB.
+        // We limit features post-detection by sorting by response strength.
+        // This provides consistent behavior across detectors but may have 
+        // different performance characteristics than ORB's built-in limiting.
     }
 }
 

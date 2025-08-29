@@ -1,12 +1,13 @@
 #include "ransac.h"
+#include "../config.h"
 #include <random>
 #include <chrono>
 #include <iostream>
 
 RANSAC::RANSAC() {
-    reprojection_threshold_ = 3.0;
-    confidence_ = 0.995;
-    max_iterations_ = 2000;
+    reprojection_threshold_ = PanoramaConfig::DEFAULT_RANSAC_THRESHOLD;
+    confidence_ = PanoramaConfig::DEFAULT_RANSAC_CONFIDENCE;
+    max_iterations_ = PanoramaConfig::DEFAULT_RANSAC_MAX_ITERATIONS;
 }
 
 RANSACResult RANSAC::findHomography(
@@ -68,6 +69,13 @@ RANSACResult RANSAC::findHomography(
             best_H = H.clone();
             best_mask = inlier_mask;
             
+            // Adaptive RANSAC: Update iteration count based on inlier ratio
+            // The formula calculates the minimum number of iterations needed to ensure
+            // with probability p that at least one sample set contains only inliers.
+            // N = log(1 - p) / log(1 - w^s), where:
+            // - p is the desired confidence (e.g., 0.995)
+            // - w is the inlier ratio
+            // - s is the sample size (4 for homography)
             w = static_cast<double>(best_inliers) / n_points;
             if (w > 0.0 && w < 1.0) {
                 double new_iterations = std::log(1 - p) / std::log(1 - std::pow(w, 4));
@@ -114,6 +122,16 @@ cv::Mat RANSAC::computeHomographyDLT(const std::vector<cv::Point2f>& pts1,
         return cv::Mat();
     }
     
+    // Direct Linear Transform (DLT) algorithm for homography estimation
+    // For each point correspondence (x1,y1) -> (x2,y2), we have:
+    // x2 = (h11*x1 + h12*y1 + h13) / (h31*x1 + h32*y1 + h33)
+    // y2 = (h21*x1 + h22*y1 + h23) / (h31*x1 + h32*y1 + h33)
+    // 
+    // Cross-multiplying and rearranging gives us two linear equations per point:
+    // -x1*h11 - y1*h12 - h13 + x2*x1*h31 + x2*y1*h32 + x2*h33 = 0
+    // -x1*h21 - y1*h22 - h23 + y2*x1*h31 + y2*y1*h32 + y2*h33 = 0
+    //
+    // We construct matrix A such that A*h = 0, where h is the flattened homography
     cv::Mat A(8, 9, CV_64F);
     
     for (int i = 0; i < 4; i++) {
@@ -147,8 +165,8 @@ cv::Mat RANSAC::computeHomographyDLT(const std::vector<cv::Point2f>& pts1,
     cv::SVD::compute(A, w, u, vt, cv::SVD::FULL_UV);
     
     // Check if SVD succeeded 
-    if (vt.cols != 9) {
-        std::cerr << "SVD failed: vt has " << vt.cols << " columns (expected 9)" << std::endl;
+    if (vt.cols != 9 || vt.rows != 9) {
+        // SVD failed - return empty matrix immediately
         return cv::Mat();
     }
     
@@ -158,8 +176,8 @@ cv::Mat RANSAC::computeHomographyDLT(const std::vector<cv::Point2f>& pts1,
     
     // Check for degenerate homography
     double det = H.at<double>(2, 2);
-    if (std::abs(det) < 1e-10) {
-        std::cerr << "Degenerate homography detected" << std::endl;
+    if (std::abs(det) < PanoramaConfig::HOMOGRAPHY_EPSILON) {
+        // Degenerate homography - return empty matrix
         return cv::Mat();
     }
     

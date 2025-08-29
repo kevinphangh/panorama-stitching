@@ -9,10 +9,10 @@ Advanced panorama stitching application with multiple feature detectors and blen
 ./build.sh
 
 # Stitch two images
-./build/panorama_stitching img1.jpg img2.jpg --output panorama.jpg
+./build/panorama_stitcher --stitch img1.jpg img2.jpg --output panorama.jpg
 
 # Stitch multiple images (3+)
-./build/panorama_stitching img1.jpg img2.jpg img3.jpg --output panorama.jpg
+./build/panorama_stitcher --stitch-multiple img1.jpg img2.jpg img3.jpg --output panorama.jpg
 
 # Or use the wrapper script (handles library paths)
 ./run_panorama.sh --stitch img1.jpg img2.jpg --output panorama.jpg
@@ -30,38 +30,38 @@ Advanced panorama stitching application with multiple feature detectors and blen
 ### Two-Image Stitching
 ```bash
 # Basic two-image stitching (img1 + img2)
-./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --output indoor_panorama_1_2.jpg
+./build/panorama_stitcher --stitch datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --output indoor_panorama_1_2.jpg
 
 # Two-image stitching (img2 + img3) with feather blending
-./build/panorama_stitching datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --blend-mode feather --output indoor_panorama_2_3.jpg
+./build/panorama_stitcher --stitch datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --blend-mode feather --output indoor_panorama_2_3.jpg
 
 # Using AKAZE detector for more features
-./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --detector akaze --output indoor_akaze.jpg
+./build/panorama_stitcher --stitch datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --detector akaze --output indoor_akaze.jpg
 ```
 
 ### Three-Image Panorama (Full Indoor Scene)
 ```bash
 # Stitch all three indoor images together
-./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --output indoor_full_panorama.jpg
+./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --output indoor_full_panorama.jpg
 
 # With multiband blending for smoother transitions
-./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --blend-mode multiband --output indoor_multiband.jpg
+./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --blend-mode multiband --output indoor_multiband.jpg
 
 # With visualization of intermediate steps
-./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --visualize --output indoor_debug.jpg
+./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --visualize --output indoor_debug.jpg
 ```
 
 ### Advanced Options
 ```bash
 # High-quality stitching with more features and precise matching
-./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg \
+./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg \
     --max-features 5000 \
     --ransac-threshold 1.0 \
     --blend-mode multiband \
     --output indoor_high_quality.jpg
 
 # Fast stitching for real-time applications
-./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg \
+./build/panorama_stitcher --stitch datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg \
     --max-features 500 \
     --blend-mode simple \
     --output indoor_fast.jpg
@@ -141,10 +141,10 @@ Sample datasets included in `datasets/`:
 ### Quick Test Commands
 ```bash
 # Test with indoor scene (most reliable)
-./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --output test.jpg
+./build/panorama_stitcher --stitch datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --output test.jpg
 
-# Full indoor panorama
-./build/panorama_stitching datasets/indoor_scene/*.jpg --output full_indoor.jpg
+# Full indoor panorama (3 images)
+./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --output full_indoor.jpg
 ```
 
 ## Performance

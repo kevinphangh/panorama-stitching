@@ -23,11 +23,6 @@ public:
         const cv::Mat& mask2
     );
     
-    cv::Mat blendMultiple(
-        const std::vector<cv::Mat>& images,
-        const std::vector<cv::Mat>& masks
-    );
-    
     void setBlendMode(BlendMode mode) { blend_mode_ = mode; }
     BlendMode getBlendMode() const { return blend_mode_; }
     
@@ -50,8 +45,6 @@ private:
     std::vector<cv::Mat> createGaussianPyramid(const cv::Mat& img, int levels);
     std::vector<cv::Mat> createLaplacianPyramid(const cv::Mat& img, int levels);
     cv::Mat reconstructFromPyramid(const std::vector<cv::Mat>& pyramid);
-    
-    cv::Mat createWeightMap(const cv::Mat& mask, int feather_radius);
 };
 
 #endif

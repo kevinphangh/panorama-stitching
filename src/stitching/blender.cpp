@@ -102,6 +102,17 @@ cv::Mat Blender::featherBlend(const cv::Mat& img1, const cv::Mat& img2,
 cv::Mat Blender::multibandBlend(const cv::Mat& img1, const cv::Mat& img2,
                                const cv::Mat& mask1, const cv::Mat& mask2,
                                int num_bands) {
+    // Multiband blending using Laplacian pyramids
+    // This technique blends different frequency bands separately to achieve smooth transitions
+    // while preserving fine details. High frequencies (edges, details) are blended with sharp
+    // transitions, while low frequencies (colors, gradients) are blended smoothly.
+    //
+    // Algorithm:
+    // 1. Build Laplacian pyramids for both images (frequency decomposition)
+    // 2. Build Gaussian pyramids for masks (smooth blending weights)
+    // 3. Blend each pyramid level using corresponding mask weights
+    // 4. Reconstruct the final image from the blended pyramid
+    
     // Validate inputs
     if (img1.size() != img2.size() || img1.type() != img2.type()) {
         std::cerr << "Error: Images must have same size and type for blending\n";
