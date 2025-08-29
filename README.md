@@ -1,6 +1,6 @@
 # Panorama Stitching
 
-Real-time panorama stitching implementation for Visual Computing Assignment 1 (Aarhus University 2025).
+Advanced panorama stitching application with multiple feature detectors and blending modes. Real-time implementation for Visual Computing Assignment 1 (Aarhus University 2025).
 
 ## Quick Start
 
@@ -9,10 +9,13 @@ Real-time panorama stitching implementation for Visual Computing Assignment 1 (A
 ./build.sh
 
 # Stitch two images
-./run_panorama.sh --stitch img1.jpg img2.jpg --output panorama.jpg
+./build/panorama_stitching img1.jpg img2.jpg --output panorama.jpg
 
 # Stitch multiple images (3+)
-./run_panorama.sh --stitch-multiple img1.jpg img2.jpg img3.jpg --output panorama.jpg
+./build/panorama_stitching img1.jpg img2.jpg img3.jpg --output panorama.jpg
+
+# Or use the wrapper script (handles library paths)
+./run_panorama.sh --stitch img1.jpg img2.jpg --output panorama.jpg
 ```
 
 ## Features
@@ -21,6 +24,54 @@ Real-time panorama stitching implementation for Visual Computing Assignment 1 (A
 - **Feature Matching**: Brute-force with Lowe's ratio test
 - **Homography Estimation**: RANSAC with DLT
 - **Image Blending**: Simple overlay, feathering, multiband (Laplacian pyramid)
+
+## Examples with Indoor Scene Dataset
+
+### Two-Image Stitching
+```bash
+# Basic two-image stitching (img1 + img2)
+./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --output indoor_panorama_1_2.jpg
+
+# Two-image stitching (img2 + img3) with feather blending
+./build/panorama_stitching datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --blend-mode feather --output indoor_panorama_2_3.jpg
+
+# Using AKAZE detector for more features
+./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --detector akaze --output indoor_akaze.jpg
+```
+
+### Three-Image Panorama (Full Indoor Scene)
+```bash
+# Stitch all three indoor images together
+./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --output indoor_full_panorama.jpg
+
+# With multiband blending for smoother transitions
+./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --blend-mode multiband --output indoor_multiband.jpg
+
+# With visualization of intermediate steps
+./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --visualize --output indoor_debug.jpg
+```
+
+### Advanced Options
+```bash
+# High-quality stitching with more features and precise matching
+./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg \
+    --max-features 5000 \
+    --ransac-threshold 1.0 \
+    --blend-mode multiband \
+    --output indoor_high_quality.jpg
+
+# Fast stitching for real-time applications
+./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg \
+    --max-features 500 \
+    --blend-mode simple \
+    --output indoor_fast.jpg
+```
+
+### Expected Output
+- **Two-image stitching**: Creates a wide panorama showing continuous indoor space
+- **Three-image stitching**: Produces a complete 180° view of the indoor environment
+- **File sizes**: Typically 1-3MB for JPEG output
+- **Processing time**: ~200ms per image pair on modern hardware
 
 ## Project Structure
 
@@ -78,10 +129,23 @@ make -j$(nproc)
 
 ## Test Datasets
 
-Three sample datasets are included in `datasets/`:
-- `indoor_scene/`: Indoor environment test images
-- `outdoor_scene1/`: Outdoor scene set 1
-- `outdoor_scene2/`: Outdoor scene set 2
+Sample datasets included in `datasets/`:
+
+### Indoor Scene (`datasets/indoor_scene/`)
+- **img1.jpg**: Left view of modern classroom/workspace
+- **img2.jpg**: Center view showing tables and windows
+- **img3.jpg**: Right view completing the panoramic scene
+- **Characteristics**: Well-lit interior with strong geometric features (tables, ceiling slats, windows)
+- **Best for**: Testing feature detection on regular patterns and indoor lighting
+
+### Quick Test Commands
+```bash
+# Test with indoor scene (most reliable)
+./build/panorama_stitching datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --output test.jpg
+
+# Full indoor panorama
+./build/panorama_stitching datasets/indoor_scene/*.jpg --output full_indoor.jpg
+```
 
 ## Performance
 
@@ -91,13 +155,34 @@ Typical processing times (Intel i7, Release build):
 - RANSAC: ~10ms
 - Total Pipeline: ~200ms per image pair
 
-## Known Issues
+## Troubleshooting
 
-- AKAZE detector may fail on very large (>5000x5000) sparse images
-- Large panoramas are automatically clamped to 5000x5000 pixels
+### Common Issues
 
-## Notes
+1. **Library conflicts (libgomp.so.1)**
+   ```bash
+   # Use the wrapper script instead of direct binary
+   ./run_panorama.sh --stitch img1.jpg img2.jpg --output result.jpg
+   ```
 
-- Use `run_panorama.sh` wrapper to handle library path conflicts
-- ORB detector recommended for multi-image stitching (more robust)
-- Images are processed sequentially from left to right
+2. **"Not enough features detected"**
+   - Use ORB detector (default) instead of AKAZE
+   - Increase `--max-features` to 5000
+   - Ensure images have sufficient texture/detail
+
+3. **Poor alignment or failed stitching**
+   - Images must have 20-40% overlap
+   - Ensure images are taken from same viewpoint height
+   - Try reducing `--ransac-threshold` to 1.0 for stricter matching
+
+4. **AKAZE failing on large images**
+   - AKAZE may fail on images >5000x5000 pixels
+   - Use ORB detector for large or multi-image stitching
+
+## Tips for Best Results
+
+- **Image Order**: Provide images from left to right for proper panorama assembly
+- **Overlap**: Maintain 30-40% overlap between consecutive images
+- **Lighting**: Consistent lighting across images produces better blending
+- **Features**: Images with distinct features (corners, edges) stitch better than uniform surfaces
+- **Multi-image**: For 3+ images, use default ORB detector for robustness
