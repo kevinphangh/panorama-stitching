@@ -154,6 +154,40 @@ cv::Mat performStitchingDirect(
         return cv::Mat();
     }
     
+    // Validate homography quality
+    double det = cv::determinant(homography);
+    if (std::abs(det) < 0.001 || std::abs(det) > 1000) {
+        std::cerr << "Error: Homography determinant out of reasonable range: " << det << std::endl;
+        std::cerr << "This indicates poor feature matches or incompatible images\n";
+        std::cerr << "Try: 1) Using ORB detector instead of AKAZE\n";
+        std::cerr << "     2) Ensuring images have sufficient overlap (30-40%)\n";
+        std::cerr << "     3) Increasing max_features for better matching\n";
+        return cv::Mat();
+    }
+    
+    // Additional validation: check if homography would create extreme transformation
+    cv::Mat H_normalized = homography.clone();
+    H_normalized /= H_normalized.at<double>(2, 2);
+    
+    // Check for extreme scaling or shearing
+    double scale_x = std::sqrt(H_normalized.at<double>(0,0) * H_normalized.at<double>(0,0) + 
+                               H_normalized.at<double>(1,0) * H_normalized.at<double>(1,0));
+    double scale_y = std::sqrt(H_normalized.at<double>(0,1) * H_normalized.at<double>(0,1) + 
+                               H_normalized.at<double>(1,1) * H_normalized.at<double>(1,1));
+    
+    if (scale_x < 0.1 || scale_x > 10 || scale_y < 0.1 || scale_y > 10) {
+        std::cerr << "Error: Homography implies extreme scaling (x=" << scale_x << ", y=" << scale_y << ")\n";
+        std::cerr << "Images may not be from the same scene or have insufficient overlap\n";
+        return cv::Mat();
+    }
+    
+    // Check for minimum number of inliers
+    if (ransac_result.num_inliers < 20) {
+        std::cerr << "Error: Too few inliers (" << ransac_result.num_inliers << ") for reliable stitching\n";
+        std::cerr << "Minimum 20 inliers required for stable homography\n";
+        return cv::Mat();
+    }
+    
     // Visualize matches if requested
     if (visualize) {
         cv::Mat match_img = matcher.visualizeMatches(
@@ -215,12 +249,19 @@ cv::Mat performStitchingDirect(
         return cv::Mat();
     }
     
-    // If transformation is extreme, clamp to configurable size
+    // Check if transformation would create unreasonably large panorama
     if (panorama_size.width > max_panorama_dimension || panorama_size.height > max_panorama_dimension) {
-        std::cerr << "Warning: Large panorama size " << panorama_size.width 
-                  << "x" << panorama_size.height << ", clamping to " << max_panorama_dimension << std::endl;
-        panorama_size.width = std::min(panorama_size.width, max_panorama_dimension);
-        panorama_size.height = std::min(panorama_size.height, max_panorama_dimension);
+        std::cerr << "Error: Panorama size would be " << panorama_size.width 
+                  << "x" << panorama_size.height << " pixels (max: " << max_panorama_dimension << ")\n";
+        std::cerr << "This usually indicates:\n";
+        std::cerr << "  1) Poor feature matches between images\n";
+        std::cerr << "  2) Images from different scenes\n";
+        std::cerr << "  3) Insufficient overlap between images\n";
+        std::cerr << "Recommendations:\n";
+        std::cerr << "  - Use ORB detector (more robust for multi-image stitching)\n";
+        std::cerr << "  - Ensure 30-40% overlap between consecutive images\n";
+        std::cerr << "  - Verify images are from the same scene\n";
+        return cv::Mat();
     }
     
     // Create output panorama

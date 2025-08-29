@@ -2,8 +2,17 @@
 #include <opencv2/imgproc.hpp>
 
 ORBDetector::ORBDetector() {
+    createDetector();
+}
+
+void ORBDetector::createDetector() {
     detector_ = cv::ORB::create(max_features_, 1.2f, 8, 31, 0, 2, 
                                cv::ORB::HARRIS_SCORE, 31, 20);
+}
+
+void ORBDetector::setMaxFeatures(int max_features) {
+    max_features_ = max_features;
+    createDetector();  // Recreate detector with new max_features
 }
 
 DetectionResult ORBDetector::detect(const cv::Mat& image) {

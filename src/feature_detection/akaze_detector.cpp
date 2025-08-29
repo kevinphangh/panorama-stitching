@@ -3,8 +3,17 @@
 #include <algorithm>
 
 AKAZEDetector::AKAZEDetector() {
+    createDetector();
+}
+
+void AKAZEDetector::createDetector() {
     detector_ = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB,
                                   0, 3, 0.001f, 4, 4, cv::KAZE::DIFF_PM_G2);
+}
+
+void AKAZEDetector::setMaxFeatures(int max_features) {
+    max_features_ = max_features;
+    createDetector();  // Recreate detector with new settings
 }
 
 DetectionResult AKAZEDetector::detect(const cv::Mat& image) {
