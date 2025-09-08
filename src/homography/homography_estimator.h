@@ -18,7 +18,6 @@ public:
     );
     
     void setRANSACThreshold(double threshold) { ransac_threshold_ = threshold; }
-    void setRANSACConfidence(double confidence) { ransac_confidence_ = confidence; }
     
     RANSACResult getLastResult() const { return last_result_; }
     

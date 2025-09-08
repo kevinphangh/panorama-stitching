@@ -64,9 +64,11 @@ MatchingResult FeatureMatcher::matchFeatures(
     
     result.num_good_matches = result.good_matches.size();
     
-    // Note: RANSAC filtering is now done in HomographyEstimator to avoid redundancy
-    result.inlier_matches = result.good_matches;  // Will be refined by HomographyEstimator
-    result.num_inliers = result.num_good_matches;
+    // Store match distances for histogram generation
+    result.match_distances.clear();
+    for (const auto& match : result.good_matches) {
+        result.match_distances.push_back(match.distance);
+    }
     
     return result;
 }
@@ -104,15 +106,4 @@ cv::Mat FeatureMatcher::visualizeMatches(
                    std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
     
     return match_img;
-}
-
-std::vector<double> FeatureMatcher::computeMatchDistances(const std::vector<cv::DMatch>& matches) {
-    std::vector<double> distances;
-    distances.reserve(matches.size());
-    
-    for (const auto& match : matches) {
-        distances.push_back(match.distance);
-    }
-    
-    return distances;
 }

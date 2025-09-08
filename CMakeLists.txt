@@ -39,6 +39,7 @@ set(SOURCES
     src/stitching/image_warper.cpp
     src/stitching/blender.cpp
     src/experiments/experiment_runner.cpp
+    src/experiments/visualization.cpp
 )
 
 # Set RPATH handling to avoid library conflicts

@@ -27,7 +27,6 @@ public:
         int max_iterations = 2000
     );
     
-    void setMethod(int method) { method_ = method; }
     void setReprojectionThreshold(double threshold) { reprojection_threshold_ = threshold; }
     
     double computeReprojectionError(
@@ -44,7 +43,6 @@ public:
     );
     
 private:
-    int method_ = cv::RANSAC;
     double reprojection_threshold_ = 3.0;
     double confidence_ = 0.995;
     int max_iterations_ = 2000;

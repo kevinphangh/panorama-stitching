@@ -8,8 +8,7 @@
 enum class BlendMode {
     SIMPLE_OVERLAY,
     FEATHERING,
-    MULTIBAND,
-    EXPOSURE_COMPENSATION
+    MULTIBAND
 };
 
 class Blender {
@@ -24,7 +23,9 @@ public:
     );
     
     void setBlendMode(BlendMode mode) { blend_mode_ = mode; }
-    BlendMode getBlendMode() const { return blend_mode_; }
+    
+private:
+    BlendMode blend_mode_ = BlendMode::FEATHERING;
     
     cv::Mat simpleOverlay(const cv::Mat& img1, const cv::Mat& img2,
                          const cv::Mat& mask1, const cv::Mat& mask2);
@@ -36,11 +37,6 @@ public:
     cv::Mat multibandBlend(const cv::Mat& img1, const cv::Mat& img2,
                           const cv::Mat& mask1, const cv::Mat& mask2,
                           int num_bands = 5);
-    
-private:
-    BlendMode blend_mode_ = BlendMode::FEATHERING;
-    int feather_radius_ = 30;
-    int num_bands_ = 5;
     
     std::vector<cv::Mat> createGaussianPyramid(const cv::Mat& img, int levels);
     std::vector<cv::Mat> createLaplacianPyramid(const cv::Mat& img, int levels);

@@ -28,13 +28,6 @@ namespace PanoramaConfig {
     constexpr double MAX_HOMOGRAPHY_SCALE = 10.0;
     constexpr double HOMOGRAPHY_EPSILON = 1e-10;
     
-    // Blending Configuration
-    constexpr int DEFAULT_FEATHER_RADIUS = 30;
-    constexpr int DEFAULT_PYRAMID_LEVELS = 5;
-    
-    // Matching Configuration
-    constexpr double DEFAULT_RATIO_TEST_THRESHOLD = 0.7;
-    
     // Image Size Reference (for adaptive feature scaling)
     constexpr int REFERENCE_IMAGE_WIDTH = 2048;
     constexpr int REFERENCE_IMAGE_HEIGHT = 1536;

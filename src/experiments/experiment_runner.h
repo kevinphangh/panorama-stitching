@@ -37,16 +37,9 @@ struct ExperimentResult {
     int ransac_iterations;
     
     // Stitching metrics
-    double warping_time_ms;
-    double blending_time_ms;
     double total_time_ms;
     
-    // Quality metrics
-    double alignment_error;
-    double blend_quality_score;
-    
     cv::Mat panorama;
-    std::vector<cv::Mat> intermediate_results;
 };
 
 class ExperimentRunner {
@@ -57,7 +50,6 @@ public:
     void runFeatureDetectorComparison(const std::string& dataset_path);
     void runRANSACThresholdExperiment(const std::string& dataset_path);
     void runBlendingComparison(const std::string& dataset_path);
-    void runScalabilityTest(const std::string& dataset_path);
     
     ExperimentResult runSingleExperiment(
         const std::string& img1_path,
@@ -68,8 +60,7 @@ public:
     void saveResults(const std::string& output_dir);
     void generateReport(const std::string& output_path);
     void exportMetricsToCSV(const std::string& csv_path);
-    
-    std::vector<ExperimentResult> getResults() const { return results_; }
+    void generateVisualizations(const std::string& output_dir);
     
 private:
     std::vector<ExperimentResult> results_;

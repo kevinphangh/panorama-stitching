@@ -113,6 +113,3 @@ perf.data.old
 *.zip
 *.rar
 *.7z
-
-# Wrapper script (user specific)
-run_panorama.sh

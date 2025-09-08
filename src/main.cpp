@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cstdio>
 #include <sstream>
 #include <limits>
 #include <opencv2/opencv.hpp>
@@ -17,6 +16,7 @@
 #include "stitching/image_warper.h"
 #include "stitching/blender.h"
 #include "experiments/experiment_runner.h"
+#include "experiments/visualization.h"
 
 void printUsage(const char* program_name) {
     std::cout << "Usage: " << program_name << " [options]\n"
@@ -340,6 +340,22 @@ cv::Mat performStitchingDirect(
         );
         cv::imshow("Inlier Matches", match_img);
         cv::waitKey(0);
+        
+        // Generate and save match distance histogram
+        if (!match_result.match_distances.empty()) {
+            cv::Mat histogram = Visualization::generateMatchDistanceHistogram(
+                match_result.match_distances,
+                "Match Distance Distribution"
+            );
+            if (!histogram.empty()) {
+                std::string hist_filename = "match_distances_histogram.jpg";
+                if (Visualization::saveVisualization(histogram, hist_filename)) {
+                    std::cout << "Match distance histogram saved to: " << hist_filename << std::endl;
+                }
+                cv::imshow("Match Distance Histogram", histogram);
+                cv::waitKey(0);
+            }
+        }
     }
     
     // Warp images

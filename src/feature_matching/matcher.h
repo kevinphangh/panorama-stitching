@@ -7,15 +7,13 @@
 #include <chrono>
 
 struct MatchingResult {
-    std::vector<cv::DMatch> matches;
     std::vector<cv::DMatch> good_matches;
-    std::vector<cv::DMatch> inlier_matches;
+    std::vector<double> match_distances;  // Store all match distances
     double matching_time_ms;
     double filtering_time_ms;
     double ratio_test_threshold;
     int num_initial_matches;
     int num_good_matches;
-    int num_inliers;
 };
 
 class FeatureMatcher {
@@ -31,7 +29,6 @@ public:
     );
     
     void setMatcherType(const std::string& type);
-    void setCrossCheck(bool enable) { cross_check_ = enable; }
     
     cv::Mat visualizeMatches(
         const cv::Mat& img1, 
@@ -40,8 +37,6 @@ public:
         const std::vector<cv::KeyPoint>& keypoints2,
         const std::vector<cv::DMatch>& matches
     );
-    
-    std::vector<double> computeMatchDistances(const std::vector<cv::DMatch>& matches);
     
 private:
     cv::Ptr<cv::DescriptorMatcher> matcher_;

@@ -6,7 +6,7 @@ Advanced panorama stitching application with multiple feature detectors and blen
 
 ```bash
 # Build the project
-./build.sh
+./scripts/build.sh
 
 # Stitch two images
 ./build/panorama_stitcher --stitch img1.jpg img2.jpg --output panorama.jpg
@@ -15,7 +15,7 @@ Advanced panorama stitching application with multiple feature detectors and blen
 ./build/panorama_stitcher --stitch-multiple img1.jpg img2.jpg img3.jpg --output panorama.jpg
 
 # Or use the wrapper script (handles library paths)
-./run_panorama.sh --stitch img1.jpg img2.jpg --output panorama.jpg
+./scripts/run_panorama.sh --stitch img1.jpg img2.jpg --output panorama.jpg
 ```
 
 ## Features
@@ -96,7 +96,7 @@ src/
 ## Command-Line Options
 
 ```bash
-./run_panorama.sh [options]
+./scripts/run_panorama.sh [options]
 
 Options:
   --stitch <img1> <img2>        # Stitch two images
@@ -162,7 +162,7 @@ Typical processing times (Intel i7, Release build):
 1. **Library conflicts (libgomp.so.1)**
    ```bash
    # Use the wrapper script instead of direct binary
-   ./run_panorama.sh --stitch img1.jpg img2.jpg --output result.jpg
+   ./scripts/run_panorama.sh --stitch img1.jpg img2.jpg --output result.jpg
    ```
 
 2. **"Not enough features detected"**

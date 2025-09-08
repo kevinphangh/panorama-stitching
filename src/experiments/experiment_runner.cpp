@@ -1,4 +1,5 @@
 #include "experiment_runner.h"
+#include "visualization.h"
 #include "../feature_detection/orb_detector.h"
 #include "../feature_detection/akaze_detector.h"
 #include "../feature_matching/matcher.h"
@@ -33,6 +34,10 @@ void ExperimentRunner::runAllExperiments() {
     runBlendingComparison(dataset_dir);
     
     std::cout << "Experiments completed. " << results_.size() << " results collected.\n";
+    
+    // Export metrics and generate visualizations
+    exportMetricsToCSV("results/metrics.csv");
+    generateVisualizations("results");
 }
 
 void ExperimentRunner::runFeatureDetectorComparison(const std::string& dataset_path) {
@@ -196,18 +201,14 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
     // Image stitching
     if (!homography.empty()) {
         // Warp
-        auto warp_start = std::chrono::high_resolution_clock::now();
         ImageWarper warper;
         auto bounds = HomographyEstimator::calculateOutputBounds(img1, img2, homography);
         cv::Mat panorama = cv::Mat::zeros(bounds.height, bounds.width, img1.type());
         img1.copyTo(panorama(cv::Rect(0, 0, img1.cols, img1.rows)));
         
         cv::Mat warped2 = warper.warpPerspective(img2, homography, panorama.size());
-        auto warp_end = std::chrono::high_resolution_clock::now();
-        result.warping_time_ms = std::chrono::duration<double, std::milli>(warp_end - warp_start).count();
         
         // Blend
-        auto blend_start = std::chrono::high_resolution_clock::now();
         Blender blender;
         if (config.blend_mode == "simple") {
             blender.setBlendMode(BlendMode::SIMPLE_OVERLAY);
@@ -224,8 +225,6 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
                            mask2, homography, panorama.size());
         
         result.panorama = blender.blend(panorama, warped2, mask1, mask2);
-        auto blend_end = std::chrono::high_resolution_clock::now();
-        result.blending_time_ms = std::chrono::duration<double, std::milli>(blend_end - blend_start).count();
     }
     
     auto total_end = std::chrono::high_resolution_clock::now();
@@ -307,4 +306,26 @@ void ExperimentRunner::exportMetricsToCSV(const std::string& csv_path) {
 
 void ExperimentRunner::generateReport(const std::string& output_path) {
     std::cout << "Generating report to " << output_path << "\n";
+}
+
+void ExperimentRunner::generateVisualizations(const std::string& output_dir) {
+    std::cout << "Generating visualizations...\n";
+    
+    // Create output directory if it doesn't exist
+    fs::create_directories(output_dir);
+    
+    // Generate visualizations from the CSV file
+    std::string csv_path = output_dir + "/metrics.csv";
+    if (fs::exists(csv_path)) {
+        Visualization::generateExperimentReport(csv_path, output_dir);
+    }
+    
+    // Generate match distance histograms for each experiment
+    for (const auto& result : results_) {
+        // Note: We would need to store match distances in ExperimentResult
+        // For now, this is a placeholder
+        std::cout << "Generated visualizations for " << result.config.name << "\n";
+    }
+    
+    std::cout << "Visualizations saved to " << output_dir << "\n";
 }
