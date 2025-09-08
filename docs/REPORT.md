@@ -6,9 +6,9 @@
 
 ## 1. Introduction
 
-This report presents a comprehensive real-time panorama stitching system that combines robust feature detection, accurate homography estimation, and sophisticated image blending techniques. The system implements multiple algorithmic choices and evaluates their performance through controlled experiments on diverse datasets.
+This report presents a real-time panorama stitching system that combines feature detection, accurate homography estimation, and image blending techniques. The system implements multiple algorithmic choices and evaluates their performance through controlled experiments on datasets.
 
-The primary objective focuses on understanding how different design decisions affect both computational performance and visual quality. The implementation explores the trade-offs between processing speed and output quality, providing insights into optimal configurations for various scenarios.
+The objective focuses on understanding how different design decisions affect both computational performance and visual quality. The implementation explores the trade-offs between processing speed and output quality, providing insights into configurations for various scenarios.
 
 ## 2. System Architecture and Methodology
 
@@ -24,7 +24,7 @@ Each module operates independently, allowing systematic experimentation with dif
 
 ### 2.2 Feature Detection
 
-The system implements two state-of-the-art feature detectors:
+The system implements two feature detectors:
 
 **ORB (Oriented FAST and Rotated BRIEF)**: This detector combines the FAST keypoint detector with the BRIEF descriptor, adding rotation invariance. ORB operates on a scale pyramid with 8 levels and a 1.2× scale factor. The implementation uses Harris corner response for keypoint selection with a threshold of 20, filtering edges with a threshold of 31.
 
@@ -34,9 +34,9 @@ Both detectors implement adaptive feature scaling based on image dimensions. Whe
 
 ### 2.3 Feature Matching and Filtering
 
-The matching pipeline employs a two-stage filtering approach to ensure robust correspondences:
+The matching pipeline employs a two-stage filtering approach to ensure correspondences:
 
-**Stage 1 - Lowe's Ratio Test**: The system performs brute-force matching with k-nearest neighbors (k=2) and applies Lowe's ratio test with a threshold of 0.7. This test rejects ambiguous matches where the best match distance exceeds 70% of the second-best match distance, effectively filtering matches in repetitive textures.
+**Stage 1 - Lowe's Ratio Test**: The system performs brute-force matching with k-nearest neighbors (k=2) and applies Lowe's ratio test with a threshold of 0.7. This test rejects ambiguous matches where the best match distance exceeds 70% of the second-best match distance, filtering matches in repetitive textures.
 
 **Stage 2 - RANSAC Geometric Verification**: RANSAC iteratively estimates homographies from random 4-point samples, classifying matches as inliers based on reprojection error. The algorithm adapts its iteration count using:
 
@@ -58,7 +58,7 @@ The final homography refinement uses all inlier correspondences with least-squar
 
 ### 2.5 Image Warping and Blending
 
-The warping module applies perspective transformations using bilinear interpolation. The system calculates optimal canvas dimensions by transforming image corners and finding the bounding box.
+The warping module applies perspective transformations using bilinear interpolation. The system calculates canvas dimensions by transforming image corners and finding the bounding box.
 
 Three blending modes provide different quality-speed trade-offs:
 
@@ -66,7 +66,7 @@ Three blending modes provide different quality-speed trade-offs:
 
 **Feather Blending**: Applies Gaussian blur to masks creating smooth transitions. The implementation uses a 30-pixel feather radius with weighted averaging in overlap regions.
 
-**Multiband Blending**: Constructs 5-level Laplacian pyramids, blending low frequencies smoothly while preserving high-frequency details. This method produces the highest quality results but requires more computation.
+**Multiband Blending**: Constructs 5-level Laplacian pyramids, blending low frequencies smoothly while preserving high-frequency details. This method produces quality results but requires more computation.
 
 ## 3. Implementation Details
 
@@ -89,7 +89,7 @@ The implementation incorporates several optimizations:
 
 ### 3.3 Parameter Configuration
 
-The system provides extensive configurability through command-line arguments and compile-time constants:
+The system provides configurability through command-line arguments and compile-time constants:
 
 | Parameter | Command Flag | Default | Range | Purpose |
 |-----------|-------------|---------|-------|---------|
@@ -102,7 +102,7 @@ The system provides extensive configurability through command-line arguments and
 
 ### 4.1 Datasets
 
-The experiments utilize three diverse datasets capturing different challenging scenarios:
+The experiments utilize three datasets capturing different scenarios:
 
 **[TO BE FILLED BY USER]**
 - Indoor Scene: [Describe your indoor dataset characteristics]
@@ -165,23 +165,23 @@ All experiments run on:
 
 ## 6. Discussion
 
-### 6.1 Optimal Configurations
+### 6.1 Configurations
 
 **[TO BE FILLED BY USER based on your experiments]**
 
-[Discuss which configurations worked best for different scenarios]
+[Discuss which configurations worked for different scenarios]
 
 ### 6.2 Trade-offs Observed
 
-The experiments reveal several key trade-offs:
+The experiments reveal several trade-offs:
 
-**Speed vs Accuracy**: ORB processes images 5-10× faster than AKAZE but typically finds fewer stable matches. AKAZE's nonlinear scale space provides superior boundary preservation, particularly beneficial for scenes with complex geometry.
+**Speed vs Accuracy**: ORB processes images 5-10× faster than AKAZE but typically finds fewer stable matches. AKAZE's nonlinear scale space provides boundary preservation, beneficial for scenes with complex geometry.
 
-**Feature Density vs Performance**: Increasing features from 500 to 5000 improves match quality substantially (from ~20 to ~150 inliers in testing) but increases computation time linearly. The optimal range appears to be 2000-3000 features for real-time applications.
+**Feature Density vs Performance**: Increasing features from 500 to 5000 improves match quality (from ~20 to ~150 inliers in testing) but increases computation time linearly. The range appears to be 2000-3000 features for real-time applications.
 
-**RANSAC Threshold Impact**: Lower thresholds (1.0-2.0) produce geometrically accurate homographies but may reject valid matches in scenes with parallax. Higher thresholds (4.0-5.0) accommodate more matches but risk including outliers that degrade alignment quality.
+**RANSAC Threshold Impact**: Lower thresholds (1.0-2.0) produce accurate homographies but may reject valid matches in scenes with parallax. Higher thresholds (4.0-5.0) accommodate more matches but risk including outliers that degrade alignment quality.
 
-**Blending Quality Hierarchy**: Simple overlay exhibits visible seams but processes instantly. Feather blending eliminates hard edges with minimal overhead (~10ms). Multiband blending produces seamless results but requires 3-5× more processing time.
+**Blending Quality Hierarchy**: Simple overlay exhibits visible seams but processes instantly. Feather blending eliminates hard edges with minimal overhead (~10ms). Multiband blending produces results but requires 3-5× more processing time.
 
 ### 6.3 Failure Cases and Limitations
 
@@ -195,9 +195,9 @@ The implemented ORB detector achieves comparable performance to the original pap
 
 ## 7. Conclusions
 
-This project successfully implements a complete panorama stitching pipeline with extensive experimental evaluation capabilities. The modular architecture facilitates systematic comparison of different algorithmic choices, revealing clear trade-offs between speed and quality.
+This project implements a panorama stitching pipeline with experimental evaluation capabilities. The modular architecture facilitates systematic comparison of different algorithmic choices, revealing trade-offs between speed and quality.
 
-Key findings indicate that:
+Findings indicate that:
 1. **[TO BE FILLED BY USER - Main conclusion from your experiments]**
 2. **[TO BE FILLED BY USER - Second key finding]**
 3. **[TO BE FILLED BY USER - Third key finding]**
@@ -205,7 +205,7 @@ Key findings indicate that:
 Future improvements could explore:
 - GPU acceleration for feature detection
 - Learning-based feature matching
-- Exposure compensation for challenging lighting
+- Exposure compensation for lighting
 - Spherical/cylindrical projections for wide-angle panoramas
 
 ## References
@@ -224,7 +224,7 @@ Future improvements could explore:
 
 ## Appendix A: Sample Panorama Results
 
-**[TO BE FILLED BY USER - Add your best panorama examples]**
+**[TO BE FILLED BY USER - Add your panorama examples]**
 
 ## Appendix B: Additional Experimental Data
 

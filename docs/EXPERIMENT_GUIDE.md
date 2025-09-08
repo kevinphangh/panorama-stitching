@@ -204,7 +204,7 @@ column -t -s, results/metrics.csv | less -S
 libreoffice --calc results/metrics.csv
 ```
 
-### 2. Key Metrics to Analyze
+### 2. Metrics to Analyze
 - **Detection Time**: How fast features are detected
 - **Number of Inliers**: Quality of feature matches
 - **Inlier Ratio**: Percentage of good matches
@@ -261,13 +261,13 @@ void ExperimentRunner::runAllExperiments() {
 
 1. **Control Variables**: Change only one parameter at a time
 2. **Multiple Runs**: Run each configuration 3-5 times for consistency
-3. **Diverse Datasets**: Test on indoor, outdoor, day, night scenes
+3. **Datasets**: Test on indoor, outdoor, day, night scenes
 4. **Document Results**: Keep notes on what worked best
 5. **Visualize Early**: Use `--visualize` flag to see intermediate results
 
 ## Common Parameter Ranges
 
-| Parameter | Min | Default | Max | Good Test Range |
+| Parameter | Min | Default | Max | Test Range |
 |-----------|-----|---------|-----|-----------------|
 | max_features | 10 | 2000 | 50000 | 500-5000 |
 | ransac_threshold | 0.1 | 3.0 | 50.0 | 1.0-5.0 |

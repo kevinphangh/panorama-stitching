@@ -1,6 +1,6 @@
 # Panorama Stitching
 
-Advanced panorama stitching application with multiple feature detectors and blending modes. Real-time implementation for Visual Computing Assignment 1 (Aarhus University 2025).
+Panorama stitching application with multiple feature detectors and blending modes. Real-time implementation for Visual Computing Assignment 1 (Aarhus University 2025).
 
 ## Quick Start
 
@@ -29,7 +29,7 @@ Advanced panorama stitching application with multiple feature detectors and blen
 
 ### Two-Image Stitching
 ```bash
-# Basic two-image stitching (img1 + img2)
+# Two-image stitching (img1 + img2)
 ./build/panorama_stitcher --stitch datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --output indoor_panorama_1_2.jpg
 
 # Two-image stitching (img2 + img3) with feather blending
@@ -39,7 +39,7 @@ Advanced panorama stitching application with multiple feature detectors and blen
 ./build/panorama_stitcher --stitch datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --detector akaze --output indoor_akaze.jpg
 ```
 
-### Three-Image Panorama (Full Indoor Scene)
+### Three-Image Panorama
 ```bash
 # Stitch all three indoor images together
 ./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --output indoor_full_panorama.jpg
@@ -53,7 +53,7 @@ Advanced panorama stitching application with multiple feature detectors and blen
 
 ### Advanced Options
 ```bash
-# High-quality stitching with more features and precise matching
+# Stitching with more features
 ./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg \
     --max-features 5000 \
     --ransac-threshold 1.0 \
@@ -68,10 +68,10 @@ Advanced panorama stitching application with multiple feature detectors and blen
 ```
 
 ### Expected Output
-- **Two-image stitching**: Creates a wide panorama showing continuous indoor space
-- **Three-image stitching**: Produces a complete 180° view of the indoor environment
+- **Two-image stitching**: Creates panorama showing continuous indoor space
+- **Three-image stitching**: Produces 180° view of the indoor environment
 - **File sizes**: Typically 1-3MB for JPEG output
-- **Processing time**: ~200ms per image pair on modern hardware
+- **Processing time**: ~200ms per image pair
 
 ## Project Structure
 
@@ -132,18 +132,18 @@ make -j$(nproc)
 Sample datasets included in `datasets/`:
 
 ### Indoor Scene (`datasets/indoor_scene/`)
-- **img1.jpg**: Left view of modern classroom/workspace
+- **img1.jpg**: Left view of classroom/workspace
 - **img2.jpg**: Center view showing tables and windows
 - **img3.jpg**: Right view completing the panoramic scene
-- **Characteristics**: Well-lit interior with strong geometric features (tables, ceiling slats, windows)
-- **Best for**: Testing feature detection on regular patterns and indoor lighting
+- **Characteristics**: Interior with geometric features (tables, ceiling slats, windows)
+- **For**: Testing feature detection on patterns and indoor lighting
 
 ### Quick Test Commands
 ```bash
-# Test with indoor scene (most reliable)
+# Test with indoor scene
 ./build/panorama_stitcher --stitch datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --output test.jpg
 
-# Full indoor panorama (3 images)
+# Indoor panorama (3 images)
 ./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --output full_indoor.jpg
 ```
 
@@ -179,9 +179,9 @@ Typical processing times (Intel i7, Release build):
    - AKAZE may fail on images >5000x5000 pixels
    - Use ORB detector for large or multi-image stitching
 
-## Tips for Best Results
+## Tips for Results
 
-- **Image Order**: Provide images from left to right for proper panorama assembly
+- **Image Order**: Provide images from left to right for panorama assembly
 - **Overlap**: Maintain 30-40% overlap between consecutive images
 - **Lighting**: Consistent lighting across images produces better blending
 - **Features**: Images with distinct features (corners, edges) stitch better than uniform surfaces
