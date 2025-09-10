@@ -110,7 +110,7 @@ evince docs/REPORT.pdf  # or any PDF viewer
 Replace the temporary outdoor images:
 1. Go outside, take 2 sets of 3 photos each
 2. Save to `datasets/outdoor_scene1/` and `datasets/outdoor_scene2/`
-3. Re-run experiments: `./run_report_experiments.sh`
+3. Re-run experiments: `./scripts/run_report_experiments.sh`
 4. Update report with new results
 
 ### Add Screenshots to Report

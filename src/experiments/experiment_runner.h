@@ -30,6 +30,7 @@ struct ExperimentResult {
     int num_inliers;
     double inlier_ratio;
     double matching_time_ms;
+    std::vector<double> match_distances;
     
     // Homography metrics
     double homography_time_ms;
@@ -61,6 +62,7 @@ public:
     void generateReport(const std::string& output_path);
     void exportMetricsToCSV(const std::string& csv_path);
     void generateVisualizations(const std::string& output_dir);
+    void exportMatchDistances(const std::string& output_dir);
     
 private:
     std::vector<ExperimentResult> results_;

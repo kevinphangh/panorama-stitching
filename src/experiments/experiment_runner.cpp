@@ -37,6 +37,7 @@ void ExperimentRunner::runAllExperiments() {
     
     // Export metrics and generate visualizations
     exportMetricsToCSV("results/metrics.csv");
+    exportMatchDistances("results");
     generateVisualizations("results");
 }
 
@@ -178,6 +179,7 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
     result.num_initial_matches = match_result.num_initial_matches;
     result.num_good_matches = match_result.num_good_matches;
     result.matching_time_ms = match_result.matching_time_ms;
+    result.match_distances = match_result.match_distances;
     
     // Homography estimation
     auto h_start = std::chrono::high_resolution_clock::now();
@@ -320,12 +322,67 @@ void ExperimentRunner::generateVisualizations(const std::string& output_dir) {
         Visualization::generateExperimentReport(csv_path, output_dir);
     }
     
-    // Generate match distance histograms for each experiment
+    // Generate match distance histograms for each detector
+    std::map<std::string, std::vector<double>> distances_by_detector;
+    
     for (const auto& result : results_) {
-        // Note: We would need to store match distances in ExperimentResult
-        // For now, this is a placeholder
-        std::cout << "Generated visualizations for " << result.config.name << "\n";
+        if (!result.match_distances.empty()) {
+            distances_by_detector[result.config.detector_type].insert(
+                distances_by_detector[result.config.detector_type].end(),
+                result.match_distances.begin(),
+                result.match_distances.end()
+            );
+        }
+    }
+    
+    // Save histograms as images
+    for (const auto& [detector, distances] : distances_by_detector) {
+        if (!distances.empty()) {
+            std::string title = detector + " Match Distances";
+            cv::Mat histogram = Visualization::generateMatchDistanceHistogram(distances, title);
+            if (!histogram.empty()) {
+                std::string filename = output_dir + "/" + detector + "_match_histogram.png";
+                cv::imwrite(filename, histogram);
+                std::cout << "Saved histogram: " << filename << "\n";
+            }
+        }
     }
     
     std::cout << "Visualizations saved to " << output_dir << "\n";
+}
+
+void ExperimentRunner::exportMatchDistances(const std::string& output_dir) {
+    std::cout << "Exporting match distances...\n";
+    
+    // Create output directory if it doesn't exist
+    fs::create_directories(output_dir);
+    
+    // Export match distances for each detector type
+    std::map<std::string, std::vector<double>> distances_by_detector;
+    
+    for (const auto& result : results_) {
+        if (!result.match_distances.empty()) {
+            distances_by_detector[result.config.detector_type].insert(
+                distances_by_detector[result.config.detector_type].end(),
+                result.match_distances.begin(),
+                result.match_distances.end()
+            );
+        }
+    }
+    
+    // Save distances to CSV files
+    for (const auto& [detector, distances] : distances_by_detector) {
+        if (!distances.empty()) {
+            std::string filename = output_dir + "/" + detector + "_match_distances.csv";
+            std::ofstream file(filename);
+            
+            file << "distance\n";
+            for (double dist : distances) {
+                file << dist << "\n";
+            }
+            
+            file.close();
+            std::cout << "Exported " << distances.size() << " distances for " << detector << " to " << filename << "\n";
+        }
+    }
 }

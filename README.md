@@ -1,188 +1,110 @@
-# Panorama Stitching
+# Panorama Stitching - Visual Computing Assignment 1
 
-Panorama stitching application with multiple feature detectors and blending modes. Real-time implementation for Visual Computing Assignment 1 (Aarhus University 2025).
-
-## Quick Start
+## 🚀 Quick Start (One Command!)
 
 ```bash
-# Build the project
+./RUN_EXPERIMENTS.sh
+```
+
+This automatically:
+1. Builds the C++ project
+2. Runs 48 experiments on 3 scenes
+3. Tests ORB vs AKAZE detectors
+4. Analyzes RANSAC thresholds (1.0-5.0)
+5. Compares blending modes
+6. Creates organized results with HTML viewer
+
+## 📊 View Results
+
+```bash
+# Open in browser
+firefox results_organized/index.html
+```
+
+## 📁 Project Structure
+
+```
+.
+├── RUN_EXPERIMENTS.sh      # Main script - runs everything!
+├── datasets/               # Image datasets (3 scenes × 3 images)
+│   ├── indoor_scene/       # Indoor environment
+│   ├── outdoor_scene1/     # Outdoor scene 1
+│   └── outdoor_scene2/     # Outdoor scene 2
+├── src/                    # C++ source code
+├── scripts/                # Helper scripts (called automatically)
+└── results_organized/      # Output folder (created after running)
+    └── index.html          # Visual results browser
+```
+
+## 🔧 Manual Controls (Optional)
+
+### Build Only
+```bash
 ./scripts/build.sh
-
-# Stitch two images
-./build/panorama_stitcher --stitch img1.jpg img2.jpg --output panorama.jpg
-
-# Stitch multiple images (3+)
-./build/panorama_stitcher --stitch-multiple img1.jpg img2.jpg img3.jpg --output panorama.jpg
-
-# Or use the wrapper script (handles library paths)
-./scripts/run_panorama.sh --stitch img1.jpg img2.jpg --output panorama.jpg
 ```
 
-## Features
-
-- **Feature Detectors**: ORB (default), AKAZE
-- **Feature Matching**: Brute-force with Lowe's ratio test
-- **Homography Estimation**: RANSAC with DLT
-- **Image Blending**: Simple overlay, feathering, multiband (Laplacian pyramid)
-
-## Examples with Indoor Scene Dataset
-
-### Two-Image Stitching
+### Run Specific Test
 ```bash
-# Two-image stitching (img1 + img2)
-./build/panorama_stitcher --stitch datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --output indoor_panorama_1_2.jpg
-
-# Two-image stitching (img2 + img3) with feather blending
-./build/panorama_stitcher --stitch datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --blend-mode feather --output indoor_panorama_2_3.jpg
-
-# Using AKAZE detector for more features
-./build/panorama_stitcher --stitch datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --detector akaze --output indoor_akaze.jpg
+./build/panorama_stitcher --stitch img1.jpg img2.jpg --output result.jpg
 ```
 
-### Three-Image Panorama
-```bash
-# Stitch all three indoor images together
-./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --output indoor_full_panorama.jpg
+### Options
+- `--detector` : orb (default) or akaze
+- `--blend-mode` : simple, feather (default), or multiband
+- `--ransac-threshold` : 1.0 to 5.0 (default: 3.0)
 
-# With multiband blending for smoother transitions
-./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --blend-mode multiband --output indoor_multiband.jpg
-
-# With visualization of intermediate steps
-./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --visualize --output indoor_debug.jpg
-```
-
-### Advanced Options
-```bash
-# Stitching with more features
-./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg \
-    --max-features 5000 \
-    --ransac-threshold 1.0 \
-    --blend-mode multiband \
-    --output indoor_high_quality.jpg
-
-# Fast stitching for real-time applications
-./build/panorama_stitcher --stitch datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg \
-    --max-features 500 \
-    --blend-mode simple \
-    --output indoor_fast.jpg
-```
-
-### Expected Output
-- **Two-image stitching**: Creates panorama showing continuous indoor space
-- **Three-image stitching**: Produces 180° view of the indoor environment
-- **File sizes**: Typically 1-3MB for JPEG output
-- **Processing time**: ~200ms per image pair
-
-## Project Structure
-
-```
-src/
-├── main.cpp                    # CLI application entry
-├── feature_detection/           # Feature detection algorithms
-│   ├── orb_detector.{h,cpp}    # ORB detector
-│   └── akaze_detector.{h,cpp}  # AKAZE detector
-├── feature_matching/            # Feature matching & RANSAC
-│   ├── matcher.{h,cpp}         # Feature matching
-│   └── ransac.{h,cpp}          # RANSAC homography filtering
-├── homography/                  # Homography estimation
-│   └── homography_estimator.{h,cpp}
-├── stitching/                   # Image warping & blending
-│   ├── image_warper.{h,cpp}    # Perspective warping
-│   └── blender.{h,cpp}         # Multi-mode blending
-└── experiments/                 # Performance evaluation
-    └── experiment_runner.{h,cpp}
-```
-
-## Command-Line Options
-
-```bash
-./scripts/run_panorama.sh [options]
-
-Options:
-  --stitch <img1> <img2>        # Stitch two images
-  --stitch-multiple <imgs...>   # Stitch 3+ images
-  --detector <orb|akaze>        # Feature detector (default: orb)
-  --blend-mode <mode>           # Blending mode: simple|feather|multiband
-  --ransac-threshold <value>    # RANSAC threshold (default: 3.0)
-  --max-features <num>          # Max features to detect (default: 2000)
-  --output <path>               # Output file path
-  --visualize                   # Show intermediate results
-  --experiment-mode             # Run performance experiments
-```
-
-## Requirements
+## 📋 Requirements
 
 - CMake 3.16+
 - OpenCV 4.x
 - C++17 compiler
-- OpenMP (optional)
+- Python 3 (for analysis)
 
-## Building from Source
+## 🎯 Features
 
+- **Feature Detection**: ORB and AKAZE implementations
+- **Matching**: Brute-force with Lowe's ratio test
+- **RANSAC**: Robust homography estimation
+- **Blending**: Simple, feather, and multiband (Laplacian pyramid)
+- **Multi-Image**: Stitch 3+ images sequentially
+
+## 📈 Experiments Performed
+
+| Category | Tests | Description |
+|----------|-------|-------------|
+| Detector Comparison | 18 | ORB vs AKAZE on all image pairs |
+| RANSAC Analysis | 15 | Thresholds 1.0-5.0 on 3 scenes |
+| Blending Modes | 9 | Simple/Feather/Multiband comparison |
+| Multi-Image | 6 | 3-image panoramas per scene |
+
+## ✅ Validation
+
+Check if everything is ready:
 ```bash
-# Clean build
-rm -rf build
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
+./scripts/validate_setup.sh
 ```
 
-## Test Datasets
+## 📚 Additional Documentation
 
-Sample datasets included in `datasets/`:
+- [Assignment Guide](docs/ASSIGNMENT_GUIDE.md) - Detailed assignment requirements
+- [Technical Details](docs/TECHNICAL.md) - Implementation details
+- [API Reference](docs/CLAUDE.md) - Development notes
 
-### Indoor Scene (`datasets/indoor_scene/`)
-- **img1.jpg**: Left view of classroom/workspace
-- **img2.jpg**: Center view showing tables and windows
-- **img3.jpg**: Right view completing the panoramic scene
-- **Characteristics**: Interior with geometric features (tables, ceiling slats, windows)
-- **For**: Testing feature detection on patterns and indoor lighting
+## 🏗️ Architecture
 
-### Quick Test Commands
-```bash
-# Test with indoor scene
-./build/panorama_stitcher --stitch datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg --output test.jpg
-
-# Indoor panorama (3 images)
-./build/panorama_stitcher --stitch-multiple datasets/indoor_scene/img1.jpg datasets/indoor_scene/img2.jpg datasets/indoor_scene/img3.jpg --output full_indoor.jpg
+```
+Feature Detection → Matching → RANSAC → Homography → Warping → Blending
+     (ORB/AKAZE)     (BF+Ratio)  (Robust)   (DLT)    (Perspective) (3 modes)
 ```
 
-## Performance
+## 🐛 Troubleshooting
 
-Typical processing times (Intel i7, Release build):
-- Feature Detection: ~50ms
-- Feature Matching: ~20ms
-- RANSAC: ~10ms
-- Total Pipeline: ~200ms per image pair
+| Problem | Solution |
+|---------|----------|
+| Build fails | Check OpenCV installation: `pkg-config --modversion opencv4` |
+| No matches found | Ensure 30-40% image overlap |
+| Script permission denied | Run: `chmod +x RUN_EXPERIMENTS.sh` |
+| Python error | Install Python 3: `sudo apt install python3` |
 
-## Troubleshooting
-
-### Common Issues
-
-1. **Library conflicts (libgomp.so.1)**
-   ```bash
-   # Use the wrapper script instead of direct binary
-   ./scripts/run_panorama.sh --stitch img1.jpg img2.jpg --output result.jpg
-   ```
-
-2. **"Not enough features detected"**
-   - Use ORB detector (default) instead of AKAZE
-   - Increase `--max-features` to 5000
-   - Ensure images have sufficient texture/detail
-
-3. **Poor alignment or failed stitching**
-   - Images must have 20-40% overlap
-   - Ensure images are taken from same viewpoint height
-   - Try reducing `--ransac-threshold` to 1.0 for stricter matching
-
-4. **AKAZE failing on large images**
-   - AKAZE may fail on images >5000x5000 pixels
-   - Use ORB detector for large or multi-image stitching
-
-## Tips for Results
-
-- **Image Order**: Provide images from left to right for panorama assembly
-- **Overlap**: Maintain 30-40% overlap between consecutive images
-- **Lighting**: Consistent lighting across images produces better blending
-- **Features**: Images with distinct features (corners, edges) stitch better than uniform surfaces
-- **Multi-image**: For 3+ images, use default ORB detector for robustness
+---
+**Tip:** Just run `./RUN_EXPERIMENTS.sh` and everything happens automatically! 🎉
