@@ -112,4 +112,4 @@ perf.data.old
 *.tar.gz
 *.zip
 *.rar
-*.7z
+*.7zresults_organized/

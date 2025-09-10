@@ -101,6 +101,10 @@ print_header "STEP 3: PREPARING RESULTS DIRECTORY"
 
 rm -rf results results_organized
 mkdir -p results
+
+# Create CSV header for metrics
+echo "experiment,scene,images,detector,threshold,blend_mode,keypoints,matches,inliers,inlier_ratio,processing_time_ms,status" > results/metrics.csv
+
 print_status "Results directory cleaned and ready"
 
 ###############################################################################
@@ -142,15 +146,32 @@ run_experiment() {
     # Show progress
     echo -ne "\r[${TOTAL}/48] Testing: ${label}...                    "
     
-    # Run experiment (suppress output)
-    if ./build/panorama_stitcher --stitch "$img1" "$img2" \
+    # Run experiment and capture output for metrics
+    local exp_output=$(./build/panorama_stitcher --stitch "$img1" "$img2" \
         --detector "$detector" \
         --ransac-threshold "$threshold" \
         --blend-mode "$blend" \
-        --output "$output" > /dev/null 2>&1; then
+        --output "$output" 2>&1)
+    
+    if echo "$exp_output" | grep -q "Panorama saved"; then
         SUCCESS=$((SUCCESS + 1))
+        
+        # Extract metrics from output
+        local keypoints=$(echo "$exp_output" | grep -oP 'Detected \K\d+' | head -1)
+        local matches=$(echo "$exp_output" | grep -oP 'Found \K\d+(?= good matches)')
+        local inliers=$(echo "$exp_output" | grep -oP 'RANSAC found \K\d+(?= inliers)')
+        local ratio=$(echo "$exp_output" | grep -oP 'inliers \(\K[0-9.]+(?=%\))')
+        local time=$(echo "$exp_output" | grep -oP 'Total time: \K[0-9.]+(?= ms)')
+        
+        # Write images pair info
+        local img_pair="$(basename $img1)-$(basename $img2)"
+        
+        # Append to CSV
+        echo "$label,$scene,$img_pair,$detector,$threshold,$blend,$keypoints,$matches,$inliers,$ratio,$time,SUCCESS" >> results/metrics.csv
     else
         FAILED=$((FAILED + 1))
+        local img_pair="$(basename $img1)-$(basename $img2)"
+        echo "$label,$scene,$img_pair,$detector,$threshold,$blend,0,0,0,0,0,FAILED" >> results/metrics.csv
     fi
 }
 
@@ -168,12 +189,19 @@ run_multi_experiment() {
     
     echo -ne "\r[${TOTAL}/48] Testing: ${label}...                    "
     
-    if ./build/panorama_stitcher --stitch-multiple "$img1" "$img2" "$img3" \
+    # Run experiment and capture output
+    local exp_output=$(./build/panorama_stitcher --stitch-multiple "$img1" "$img2" "$img3" \
         --detector "$detector" \
-        --output "$output" > /dev/null 2>&1; then
+        --output "$output" 2>&1)
+    
+    if echo "$exp_output" | grep -q "Panorama saved\|created successfully"; then
         SUCCESS=$((SUCCESS + 1))
+        # Extract any available metrics
+        local time=$(echo "$exp_output" | grep -oP 'Total time: \K[0-9.]+(?= ms)' | head -1)
+        echo "$label,$scene,multi-image,$detector,3.0,feather,0,0,0,0,$time,SUCCESS" >> results/metrics.csv
     else
         FAILED=$((FAILED + 1))
+        echo "$label,$scene,multi-image,$detector,3.0,feather,0,0,0,0,0,FAILED" >> results/metrics.csv
     fi
 }
 

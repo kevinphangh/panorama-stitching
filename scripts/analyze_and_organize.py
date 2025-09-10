@@ -304,6 +304,15 @@ def main():
         # Generate summary
         generate_summary()
         
+        # Also run quantitative analysis if available
+        print("\nGenerating quantitative analysis...")
+        try:
+            import subprocess
+            subprocess.run(["python3", "scripts/generate_quantitative_analysis.py"], check=True)
+            print("  ✓ Quantitative analysis generated")
+        except Exception as e:
+            print(f"  ! Could not generate quantitative analysis: {e}")
+        
         return 0
     except Exception as e:
         print(f"Error during analysis: {e}")
