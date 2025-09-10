@@ -1,110 +1,54 @@
-# Panorama Stitching - Visual Computing Assignment 1
+# Panorama Stitching
 
-## 🚀 Quick Start (One Command!)
+## Setup
+
+### Requirements
+- Ubuntu/Linux with CMake 3.16+, OpenCV 4.x, C++17 compiler
+- Python 3 with matplotlib, pandas, numpy
+
+### Install Dependencies
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install build-essential cmake pkg-config libopencv-dev python3-pip
+pip3 install matplotlib pandas numpy
+
+# macOS
+brew install cmake opencv python3
+pip3 install matplotlib pandas numpy
+```
+
+### Clone and Prepare
+```bash
+git clone https://github.com/kevinphangh/panorama-stitching.git
+cd panorama-stitching
+chmod +x RUN_EXPERIMENTS.sh scripts/*.sh
+```
+
+## Run Experiments
 
 ```bash
 ./RUN_EXPERIMENTS.sh
 ```
 
-This automatically:
-1. Builds the C++ project
-2. Runs 48 experiments on 3 scenes
-3. Tests ORB vs AKAZE detectors
-4. Analyzes RANSAC thresholds (1.0-5.0)
-5. Compares blending modes
-6. Creates organized results with HTML viewer
+This runs all 48 experiments (~5 minutes):
+- Tests ORB vs AKAZE detectors
+- Analyzes RANSAC thresholds (1.0-5.0)  
+- Compares 3 blending modes
+- Generates quantitative analysis
 
-## 📊 View Results
+## View Results
 
 ```bash
-# Open in browser
-firefox results_organized/index.html
+# Option 1: Use Python HTTP server (recommended)
+python3 -m http.server 8000
+# Then open browser to: http://localhost:8000/results/quantitative_report.html
+
+# Option 2: Direct file opening
+firefox results/quantitative_report.html          # Quantitative analysis
+firefox results_organized/index.html              # Panorama gallery
 ```
 
-## 📁 Project Structure
-
-```
-.
-├── RUN_EXPERIMENTS.sh      # Main script - runs everything!
-├── datasets/               # Image datasets (3 scenes × 3 images)
-│   ├── indoor_scene/       # Indoor environment
-│   ├── outdoor_scene1/     # Outdoor scene 1
-│   └── outdoor_scene2/     # Outdoor scene 2
-├── src/                    # C++ source code
-├── scripts/                # Helper scripts (called automatically)
-└── results_organized/      # Output folder (created after running)
-    └── index.html          # Visual results browser
-```
-
-## 🔧 Manual Controls (Optional)
-
-### Build Only
-```bash
-./scripts/build.sh
-```
-
-### Run Specific Test
-```bash
-./build/panorama_stitcher --stitch img1.jpg img2.jpg --output result.jpg
-```
-
-### Options
-- `--detector` : orb (default) or akaze
-- `--blend-mode` : simple, feather (default), or multiband
-- `--ransac-threshold` : 1.0 to 5.0 (default: 3.0)
-
-## 📋 Requirements
-
-- CMake 3.16+
-- OpenCV 4.x
-- C++17 compiler
-- Python 3 (for analysis)
-
-## 🎯 Features
-
-- **Feature Detection**: ORB and AKAZE implementations
-- **Matching**: Brute-force with Lowe's ratio test
-- **RANSAC**: Robust homography estimation
-- **Blending**: Simple, feather, and multiband (Laplacian pyramid)
-- **Multi-Image**: Stitch 3+ images sequentially
-
-## 📈 Experiments Performed
-
-| Category | Tests | Description |
-|----------|-------|-------------|
-| Detector Comparison | 18 | ORB vs AKAZE on all image pairs |
-| RANSAC Analysis | 15 | Thresholds 1.0-5.0 on 3 scenes |
-| Blending Modes | 9 | Simple/Feather/Multiband comparison |
-| Multi-Image | 6 | 3-image panoramas per scene |
-
-## ✅ Validation
-
-Check if everything is ready:
-```bash
-./scripts/validate_setup.sh
-```
-
-## 📚 Additional Documentation
-
-- [Assignment Guide](docs/ASSIGNMENT_GUIDE.md) - Detailed assignment requirements
-- [Technical Details](docs/TECHNICAL.md) - Implementation details
-- [API Reference](docs/CLAUDE.md) - Development notes
-
-## 🏗️ Architecture
-
-```
-Feature Detection → Matching → RANSAC → Homography → Warping → Blending
-     (ORB/AKAZE)     (BF+Ratio)  (Robust)   (DLT)    (Perspective) (3 modes)
-```
-
-## 🐛 Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| Build fails | Check OpenCV installation: `pkg-config --modversion opencv4` |
-| No matches found | Ensure 30-40% image overlap |
-| Script permission denied | Run: `chmod +x RUN_EXPERIMENTS.sh` |
-| Python error | Install Python 3: `sudo apt install python3` |
-
----
-**Tip:** Just run `./RUN_EXPERIMENTS.sh` and everything happens automatically! 🎉
+### Generated Files
+- `results/` - Contains metrics.csv, analysis charts (.png), and quantitative_report.html
+- `results_organized/` - Organized panoramas by experiment type with HTML viewer
