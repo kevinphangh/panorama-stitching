@@ -9,10 +9,7 @@ Visual Computing Assignment 1 - Real-time panorama stitching system implementing
 ## Build Commands
 
 ```bash
-# Quick build (recommended)
-./scripts/build.sh
-
-# Manual build
+# Quick build (done automatically by RUN_EXPERIMENTS.sh)
 mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j$(nproc)
@@ -22,23 +19,23 @@ cmake .. -DCMAKE_BUILD_TYPE=Debug
 make -j$(nproc)
 
 # Clean rebuild
-rm -rf build && ./scripts/build.sh
+rm -rf build && mkdir -p build && cd build && cmake .. && make
 ```
 
 ## Development Commands
 
 ```bash
-# Run panorama stitcher (use wrapper to avoid library conflicts)
-./scripts/run_panorama.sh --stitch img1.jpg img2.jpg --output result.jpg
+# Run panorama stitcher directly
+./build/panorama_stitcher --stitch img1.jpg img2.jpg --output result.jpg
 
 # Multi-image stitching (3+ images)
-./scripts/run_panorama.sh --stitch-multiple img1.jpg img2.jpg img3.jpg --output panorama.jpg
+./build/panorama_stitcher --stitch-multiple img1.jpg img2.jpg img3.jpg --output panorama.jpg
 
 # Run with specific detector and blending
-./scripts/run_panorama.sh --stitch img1.jpg img2.jpg --detector akaze --blend-mode multiband
+./build/panorama_stitcher --stitch img1.jpg img2.jpg --detector akaze --blend-mode multiband
 
-# Run experiments
-./scripts/run_panorama.sh --experiment-mode
+# Run all experiments (recommended)
+./RUN_EXPERIMENTS.sh
 
 # Run tests (when implemented)
 cd build && ctest

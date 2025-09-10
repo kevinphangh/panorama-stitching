@@ -54,15 +54,12 @@ print_error() {
 
 print_header "STEP 1: BUILDING PROJECT"
 
-if [ ! -f "scripts/build.sh" ]; then
-    print_error "Build script not found. Are you in the project root?"
-    exit 1
-fi
-
-if ./scripts/build.sh > /dev/null 2>&1; then
+# Build project directly (integrated from build.sh)
+mkdir -p build
+if (cd build && cmake .. -DCMAKE_BUILD_TYPE=Release > /dev/null 2>&1 && make -j$(nproc) > /dev/null 2>&1); then
     print_status "Project built successfully"
 else
-    print_error "Build failed! Check scripts/build.sh"
+    print_error "Build failed! Check CMakeLists.txt and OpenCV installation"
     exit 1
 fi
 
@@ -280,7 +277,7 @@ print_status "Experiments completed: $SUCCESS successful, $FAILED failed"
 print_header "STEP 5: ANALYZING & ORGANIZING RESULTS"
 
 # Run the analysis and organization script
-if python3 scripts/analyze_and_organize.py; then
+if python3 scripts/analyze_results.py; then
     print_status "Results analyzed and organized"
 else
     print_warning "Analysis script had issues, but continuing..."

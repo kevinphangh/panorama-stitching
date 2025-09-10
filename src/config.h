@@ -3,7 +3,7 @@
 
 namespace PanoramaConfig {
     // Feature Detection Configuration
-    constexpr int DEFAULT_MAX_FEATURES = 2000;
+    constexpr int DEFAULT_MAX_FEATURES = 50000;  // Set high to see true detector performance
     constexpr int MIN_FEATURES = 10;
     constexpr int MAX_FEATURES = 50000;
     

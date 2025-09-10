@@ -1,21 +1,207 @@
 #!/usr/bin/env python3
 """
-Generate quantitative analysis plots and statistics from experiment results.
-This includes match distance histograms, RANSAC threshold analysis, and detector comparisons.
+Complete analysis and organization of panorama stitching experiment results.
+Combines result organization and quantitative analysis in one script.
 """
 
+import os
+import shutil
+from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-from pathlib import Path
 import json
+
+# ============================================================================
+# PART 1: ORGANIZE RESULTS
+# ============================================================================
+
+def create_organized_structure():
+    """Create organized directory structure for results"""
+    base = Path('results_organized')
+    
+    # Clear existing
+    if base.exists():
+        shutil.rmtree(base)
+    
+    # Create structure
+    categories = {
+        '01_detector_comparison': ['orb', 'akaze'],
+        '02_ransac_analysis': ['1.0', '2.0', '3.0', '4.0', '5.0'],
+        '03_blending_comparison': ['simple', 'feather', 'multiband'],
+        '04_multi_image_stitching': ['multi']
+    }
+    
+    for category, subcats in categories.items():
+        for subcat in subcats:
+            (base / category / subcat).mkdir(parents=True, exist_ok=True)
+    
+    return base
+
+def organize_files():
+    """Organize result files into categories"""
+    results_dir = Path('results')
+    organized_dir = Path('results_organized')
+    
+    if not results_dir.exists():
+        print("No results directory found!")
+        return 0
+    
+    count = 0
+    
+    # Organize panorama images
+    for img_file in results_dir.glob('*.jpg'):
+        filename = img_file.name
+        dest = None
+        
+        # Determine destination based on filename
+        if 'pair' in filename:
+            if 'orb' in filename:
+                dest = organized_dir / '01_detector_comparison' / 'orb'
+            elif 'akaze' in filename:
+                dest = organized_dir / '01_detector_comparison' / 'akaze'
+        elif 'ransac' in filename or 'RANSAC' in filename:
+            for threshold in ['1.0', '2.0', '3.0', '4.0', '5.0']:
+                if threshold in filename:
+                    dest = organized_dir / '02_ransac_analysis' / threshold
+                    break
+        elif 'blend' in filename:
+            for mode in ['simple', 'feather', 'multiband']:
+                if mode in filename:
+                    dest = organized_dir / '03_blending_comparison' / mode
+                    break
+        elif 'multi' in filename:
+            dest = organized_dir / '04_multi_image_stitching' / 'multi'
+        
+        if dest:
+            shutil.copy2(img_file, dest / filename)
+            count += 1
+    
+    return count
+
+def create_html_viewers():
+    """Create HTML viewers for each category"""
+    base = Path('results_organized')
+    
+    # Category viewer template
+    category_template = '''<!DOCTYPE html>
+<html>
+<head>
+    <title>{title}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
+        h1 {{ color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }}
+        .gallery {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; }}
+        .image-card {{ background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        .image-card img {{ width: 100%; height: auto; border-radius: 4px; cursor: pointer; }}
+        .image-card h3 {{ margin: 10px 0 5px 0; color: #555; font-size: 14px; }}
+        .back-link {{ display: inline-block; margin-bottom: 20px; color: #4CAF50; text-decoration: none; }}
+        .back-link:hover {{ text-decoration: underline; }}
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Back to Main</a>
+    <h1>{title}</h1>
+    <div class="gallery">
+        {images}
+    </div>
+    <script>
+        document.querySelectorAll('img').forEach(img => {{
+            img.onclick = () => window.open(img.src, '_blank');
+        }});
+    </script>
+</body>
+</html>'''
+    
+    # Create category viewers
+    for category_dir in sorted(base.iterdir()):
+        if category_dir.is_dir():
+            images_html = []
+            
+            for subdir in sorted(category_dir.iterdir()):
+                if subdir.is_dir():
+                    for img in sorted(subdir.glob('*.jpg')):
+                        relative_path = img.relative_to(category_dir)
+                        scene = img.stem.split('_')[0] + '_' + img.stem.split('_')[1] if '_' in img.stem else img.stem
+                        images_html.append(f'''
+                        <div class="image-card">
+                            <img src="{relative_path}" alt="{img.stem}">
+                            <h3>{img.stem}</h3>
+                        </div>''')
+            
+            title = category_dir.name.replace('_', ' ').title()
+            html_content = category_template.format(
+                title=title,
+                images=''.join(images_html)
+            )
+            
+            with open(category_dir / 'index.html', 'w') as f:
+                f.write(html_content)
+    
+    # Create main index
+    main_template = '''<!DOCTYPE html>
+<html>
+<head>
+    <title>Panorama Stitching Results</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1 { color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }
+        .categories { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 30px; }
+        .category-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-decoration: none; color: #333; transition: transform 0.2s; }
+        .category-card:hover { transform: translateY(-5px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .category-card h2 { color: #4CAF50; margin-top: 0; }
+        .category-card p { color: #666; margin: 10px 0; }
+        .stats { background: #4CAF50; color: white; padding: 15px; border-radius: 8px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🎯 Panorama Stitching - Experiment Results</h1>
+    
+    <div class="stats">
+        <strong>Summary:</strong> 48 experiments | 4 categories | 3 scenes | 2 detectors | 3 blending modes
+    </div>
+    
+    <div class="categories">
+        <a href="01_detector_comparison/index.html" class="category-card">
+            <h2>1. Detector Comparison</h2>
+            <p>ORB vs AKAZE performance across all scenes and image pairs</p>
+        </a>
+        
+        <a href="02_ransac_analysis/index.html" class="category-card">
+            <h2>2. RANSAC Analysis</h2>
+            <p>Threshold optimization from 1.0 to 5.0</p>
+        </a>
+        
+        <a href="03_blending_comparison/index.html" class="category-card">
+            <h2>3. Blending Comparison</h2>
+            <p>Simple vs Feather vs Multiband blending</p>
+        </a>
+        
+        <a href="04_multi_image_stitching/index.html" class="category-card">
+            <h2>4. Multi-Image Stitching</h2>
+            <p>Full panoramas from 3 images per scene</p>
+        </a>
+    </div>
+    
+    <div style="margin-top: 40px; padding: 20px; background: white; border-radius: 8px;">
+        <h3>📊 Quantitative Analysis</h3>
+        <p>View detailed metrics and charts: <a href="../results/quantitative_report.html">Open Quantitative Report</a></p>
+    </div>
+</body>
+</html>'''
+    
+    with open(base / 'index.html', 'w') as f:
+        f.write(main_template)
+
+# ============================================================================
+# PART 2: QUANTITATIVE ANALYSIS
+# ============================================================================
 
 def load_metrics():
     """Load metrics from CSV file"""
     metrics_file = "results/metrics.csv"
     if not os.path.exists(metrics_file):
-        print(f"Error: {metrics_file} not found. Run experiments first!")
+        print(f"  ! Warning: {metrics_file} not found - skipping quantitative analysis")
         return None
     
     df = pd.read_csv(metrics_file)
@@ -28,15 +214,13 @@ def load_metrics():
 
 def create_detector_comparison(df):
     """Create detector comparison charts"""
-    print("Creating detector comparison analysis...")
+    print("  • Creating detector comparison...")
     
-    # Filter for detector comparison experiments
     detector_df = df[df['experiment'].str.contains('pair', na=False)]
     
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
     fig.suptitle('Detector Comparison: ORB vs AKAZE', fontsize=16)
     
-    # Metrics to compare
     metrics = [
         ('keypoints', 'Average Keypoints Detected'),
         ('matches', 'Average Matches Found'),
@@ -50,7 +234,6 @@ def create_detector_comparison(df):
     for idx, (metric, title) in enumerate(metrics):
         ax = axes[idx // 3, idx % 3]
         
-        # Calculate averages by detector and scene
         data = []
         for scene in scenes:
             for detector in ['orb', 'akaze']:
@@ -65,7 +248,6 @@ def create_detector_comparison(df):
         
         plot_df = pd.DataFrame(data)
         
-        # Create grouped bar chart
         x = np.arange(len(scenes))
         width = 0.35
         
@@ -87,22 +269,18 @@ def create_detector_comparison(df):
         ax.legend()
         ax.grid(True, alpha=0.3)
     
-    # Remove empty subplot
     axes[1, 2].remove()
     
     plt.tight_layout()
     plt.savefig('results/detector_comparison.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved: results/detector_comparison.png")
 
 def create_ransac_analysis(df):
     """Create RANSAC threshold analysis plots"""
-    print("Creating RANSAC threshold analysis...")
+    print("  • Creating RANSAC analysis...")
     
-    # Filter for RANSAC experiments
     ransac_df = df[df['experiment'].str.contains('RANSAC', na=False)]
     
     if len(ransac_df) == 0:
-        print("  ! No RANSAC experiments found")
         return
     
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
@@ -118,10 +296,7 @@ def create_ransac_analysis(df):
         inliers_by_threshold = []
         for t in thresholds:
             t_data = scene_data[scene_data['threshold'] == t]
-            if len(t_data) > 0:
-                inliers_by_threshold.append(t_data['inliers'].mean())
-            else:
-                inliers_by_threshold.append(0)
+            inliers_by_threshold.append(t_data['inliers'].mean() if len(t_data) > 0 else 0)
         
         ax.plot(thresholds, inliers_by_threshold, marker='o', label=scene.replace('_', ' ').title())
     
@@ -138,10 +313,7 @@ def create_ransac_analysis(df):
         ratios_by_threshold = []
         for t in thresholds:
             t_data = scene_data[scene_data['threshold'] == t]
-            if len(t_data) > 0:
-                ratios_by_threshold.append(t_data['inlier_ratio'].mean())
-            else:
-                ratios_by_threshold.append(0)
+            ratios_by_threshold.append(t_data['inlier_ratio'].mean() if len(t_data) > 0 else 0)
         
         ax.plot(thresholds, ratios_by_threshold, marker='s', label=scene.replace('_', ' ').title())
     
@@ -175,10 +347,7 @@ def create_ransac_analysis(df):
         times_by_threshold = []
         for t in thresholds:
             t_data = scene_data[scene_data['threshold'] == t]
-            if len(t_data) > 0:
-                times_by_threshold.append(t_data['processing_time_ms'].mean())
-            else:
-                times_by_threshold.append(0)
+            times_by_threshold.append(t_data['processing_time_ms'].mean() if len(t_data) > 0 else 0)
         
         ax.plot(thresholds, times_by_threshold, marker='^', label=scene.replace('_', ' ').title())
     
@@ -190,17 +359,14 @@ def create_ransac_analysis(df):
     
     plt.tight_layout()
     plt.savefig('results/ransac_analysis.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved: results/ransac_analysis.png")
 
 def create_blending_comparison(df):
     """Create blending mode comparison analysis"""
-    print("Creating blending mode comparison...")
+    print("  • Creating blending comparison...")
     
-    # Filter for blending experiments
     blend_df = df[df['experiment'].str.contains('blend', na=False)]
     
     if len(blend_df) == 0:
-        print("  ! No blending experiments found")
         return
     
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
@@ -232,10 +398,7 @@ def create_blending_comparison(df):
         times = []
         for scene in scenes:
             scene_mode_data = blend_df[(blend_df['scene'] == scene) & (blend_df['blend_mode'] == mode)]
-            if len(scene_mode_data) > 0:
-                times.append(scene_mode_data['processing_time_ms'].mean())
-            else:
-                times.append(0)
+            times.append(scene_mode_data['processing_time_ms'].mean() if len(scene_mode_data) > 0 else 0)
         
         ax.bar(x + i * width, times, width, label=mode.title())
     
@@ -249,11 +412,10 @@ def create_blending_comparison(df):
     
     plt.tight_layout()
     plt.savefig('results/blending_comparison.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved: results/blending_comparison.png")
 
 def create_overall_statistics(df):
     """Create overall statistics summary"""
-    print("Creating overall statistics...")
+    print("  • Creating overall statistics...")
     
     stats = {
         'total_experiments': int(len(df)),
@@ -309,54 +471,16 @@ def create_overall_statistics(df):
     
     plt.title('Overall Experiment Statistics', fontsize=14, fontweight='bold', pad=20)
     plt.savefig('results/overall_statistics.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved: results/overall_statistics.png")
     
     # Save statistics to JSON
     with open('results/statistics.json', 'w') as f:
         json.dump(stats, f, indent=2)
-    print("  ✓ Saved: results/statistics.json")
-
-def generate_match_distance_histogram():
-    """Generate match distance histograms if data is available"""
-    print("Generating match distance histograms...")
-    
-    # Check if match distance files exist
-    distance_files = list(Path('results').glob('*_distances.csv'))
-    
-    if not distance_files:
-        print("  ! No match distance data found. Run with --experiment-mode to generate.")
-        return
-    
-    fig, axes = plt.subplots(1, len(distance_files), figsize=(5*len(distance_files), 5))
-    if len(distance_files) == 1:
-        axes = [axes]
-    
-    for idx, file in enumerate(distance_files):
-        detector = file.stem.replace('_distances', '')
-        distances = pd.read_csv(file, header=None).values.flatten()
-        
-        ax = axes[idx]
-        ax.hist(distances, bins=50, color='blue', alpha=0.7, edgecolor='black')
-        ax.set_xlabel('Match Distance')
-        ax.set_ylabel('Frequency')
-        ax.set_title(f'{detector.upper()} Match Distances')
-        ax.grid(True, alpha=0.3)
-        
-        # Add statistics
-        ax.axvline(distances.mean(), color='red', linestyle='--', label=f'Mean: {distances.mean():.2f}')
-        ax.axvline(np.median(distances), color='green', linestyle='--', label=f'Median: {np.median(distances):.2f}')
-        ax.legend()
-    
-    plt.tight_layout()
-    plt.savefig('results/match_distance_histograms.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved: results/match_distance_histograms.png")
 
 def create_quantitative_report():
     """Create HTML report with all quantitative results"""
-    print("Creating quantitative report...")
+    print("  • Creating quantitative report...")
     
-    html_content = """
-<!DOCTYPE html>
+    html_content = """<!DOCTYPE html>
 <html>
 <head>
     <title>Quantitative Analysis Report</title>
@@ -376,8 +500,6 @@ def create_quantitative_report():
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: #4CAF50; color: white; }
         tr:hover { background-color: #f5f5f5; }
-        .success { color: green; font-weight: bold; }
-        .failed { color: red; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -426,57 +548,65 @@ def create_quantitative_report():
         </ul>
     </div>
     
-    <h2>5. Match Distance Distribution</h2>
-    <img src="match_distance_histograms.png" alt="Match Distance Histograms">
-    <div class="metric-card">
-        <p><strong>Note:</strong> Match distance histograms show the distribution of descriptor distances 
-        between matched features. Lower distances indicate better matches.</p>
-    </div>
-    
-    <h2>6. Detailed Metrics Table</h2>
+    <h2>5. Detailed Metrics</h2>
     <p>Full experimental data available in <a href="metrics.csv">metrics.csv</a></p>
     
 </body>
-</html>
-"""
+</html>"""
     
     with open('results/quantitative_report.html', 'w') as f:
         f.write(html_content)
-    
-    print("  ✓ Saved: results/quantitative_report.html")
+
+# ============================================================================
+# MAIN EXECUTION
+# ============================================================================
 
 def main():
-    print("="*60)
-    print("GENERATING QUANTITATIVE ANALYSIS")
-    print("="*60)
-    
-    # Load metrics
-    df = load_metrics()
-    if df is None:
-        return
-    
-    print(f"\nLoaded {len(df)} experiment results")
-    
-    # Generate all analyses
-    create_detector_comparison(df)
-    create_ransac_analysis(df)
-    create_blending_comparison(df)
-    create_overall_statistics(df)
-    generate_match_distance_histogram()
-    create_quantitative_report()
-    
+    """Main function"""
     print("\n" + "="*60)
-    print("QUANTITATIVE ANALYSIS COMPLETE!")
+    print("ANALYZING AND ORGANIZING RESULTS")
     print("="*60)
-    print("\nGenerated files:")
-    print("  • results/metrics.csv - Raw experimental data")
-    print("  • results/detector_comparison.png")
-    print("  • results/ransac_analysis.png")
-    print("  • results/blending_comparison.png")
-    print("  • results/overall_statistics.png")
-    print("  • results/statistics.json")
-    print("  • results/quantitative_report.html - Complete report")
-    print("\nView the report: open results/quantitative_report.html")
+    
+    # Part 1: Organize results
+    print("\n📁 Organizing results...")
+    try:
+        base = create_organized_structure()
+        num_organized = organize_files()
+        create_html_viewers()
+        
+        print(f"  ✓ Organized {num_organized} panorama images")
+        print(f"  ✓ Created HTML viewers")
+    except Exception as e:
+        print(f"  ! Error organizing results: {e}")
+    
+    # Part 2: Quantitative analysis
+    print("\n📊 Generating quantitative analysis...")
+    try:
+        df = load_metrics()
+        if df is not None:
+            print(f"  ✓ Loaded {len(df)} experiment results")
+            
+            # Create all analyses
+            create_detector_comparison(df)
+            create_ransac_analysis(df)
+            create_blending_comparison(df)
+            create_overall_statistics(df)
+            create_quantitative_report()
+            
+            print("  ✓ Generated all analysis charts")
+            print("  ✓ Created quantitative report")
+    except Exception as e:
+        print(f"  ! Error in quantitative analysis: {e}")
+    
+    # Summary
+    print("\n" + "="*60)
+    print("ANALYSIS COMPLETE!")
+    print("="*60)
+    print("\n📊 View Results:")
+    print("  • Organized panoramas: results_organized/index.html")
+    print("  • Quantitative report: results/quantitative_report.html")
+    
+    return 0
 
 if __name__ == "__main__":
-    main()
+    exit(main())
