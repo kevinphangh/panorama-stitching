@@ -2,6 +2,7 @@
 """
 Complete analysis and organization of panorama stitching experiment results.
 Combines result organization and quantitative analysis in one script.
+Fixed version with proper HTML generation and path handling.
 """
 
 import os
@@ -11,6 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import json
+import html  # For HTML escaping
 
 # ============================================================================
 # PART 1: ORGANIZE RESULTS
@@ -83,32 +85,49 @@ def create_html_viewers():
     """Create HTML viewers for each category"""
     base = Path('results_organized')
     
-    # Category viewer template
+    # Category viewer template with fixes
     category_template = '''<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>{title}</title>
     <style>
         body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
         h1 {{ color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }}
         .gallery {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; }}
         .image-card {{ background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
-        .image-card img {{ width: 100%; height: auto; border-radius: 4px; cursor: pointer; }}
-        .image-card h3 {{ margin: 10px 0 5px 0; color: #555; font-size: 14px; }}
+        .image-card img {{ width: 100%; height: auto; border-radius: 4px; cursor: pointer; display: block; }}
+        .image-card h3 {{ margin: 10px 0 5px 0; color: #555; font-size: 14px; word-wrap: break-word; }}
         .back-link {{ display: inline-block; margin-bottom: 20px; color: #4CAF50; text-decoration: none; }}
         .back-link:hover {{ text-decoration: underline; }}
+        .error-img {{ background: #f0f0f0; padding: 40px; text-align: center; color: #999; }}
     </style>
 </head>
 <body>
-    <a href="../index.html" class="back-link">← Back to Main</a>
+    <a href="../index.html" class="back-link">&larr; Back to Main</a>
     <h1>{title}</h1>
     <div class="gallery">
         {images}
     </div>
     <script>
-        document.querySelectorAll('img').forEach(img => {{
-            img.onclick = () => window.open(img.src, '_blank');
-        }});
+        // Compatible with older browsers
+        (function() {{
+            var images = document.querySelectorAll('img');
+            for (var i = 0; i < images.length; i++) {{
+                images[i].onclick = function(e) {{
+                    window.open(e.target.src, '_blank');
+                }};
+                images[i].onerror = function(e) {{
+                    e.target.style.display = 'none';
+                    var errorDiv = document.createElement('div');
+                    errorDiv.className = 'error-img';
+                    errorDiv.textContent = 'Image not found';
+                    e.target.parentNode.insertBefore(errorDiv, e.target);
+                }};
+            }}
+        }})();
     </script>
 </body>
 </html>'''
@@ -121,27 +140,36 @@ def create_html_viewers():
             for subdir in sorted(category_dir.iterdir()):
                 if subdir.is_dir():
                     for img in sorted(subdir.glob('*.jpg')):
+                        # Fix path for cross-platform compatibility
                         relative_path = img.relative_to(category_dir)
-                        scene = img.stem.split('_')[0] + '_' + img.stem.split('_')[1] if '_' in img.stem else img.stem
+                        # Convert to forward slashes for HTML
+                        path_str = str(relative_path).replace('\\', '/')
+                        # Escape HTML entities in filename
+                        safe_stem = html.escape(img.stem)
+                        safe_path = html.escape(path_str)
+                        
                         images_html.append(f'''
                         <div class="image-card">
-                            <img src="{relative_path}" alt="{img.stem}">
-                            <h3>{img.stem}</h3>
+                            <img src="{safe_path}" alt="{safe_stem}" loading="lazy">
+                            <h3>{safe_stem}</h3>
                         </div>''')
             
             title = category_dir.name.replace('_', ' ').title()
             html_content = category_template.format(
-                title=title,
+                title=html.escape(title),
                 images=''.join(images_html)
             )
             
-            with open(category_dir / 'index.html', 'w') as f:
+            with open(category_dir / 'index.html', 'w', encoding='utf-8') as f:
                 f.write(html_content)
     
-    # Create main index
+    # Create main index with fixes
     main_template = '''<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Panorama Stitching Results</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
@@ -155,7 +183,7 @@ def create_html_viewers():
     </style>
 </head>
 <body>
-    <h1>🎯 Panorama Stitching - Experiment Results</h1>
+    <h1>Panorama Stitching - Experiment Results</h1>
     
     <div class="stats">
         <strong>Summary:</strong> 48 experiments | 4 categories | 3 scenes | 2 detectors | 3 blending modes
@@ -184,17 +212,17 @@ def create_html_viewers():
     </div>
     
     <div style="margin-top: 40px; padding: 20px; background: white; border-radius: 8px;">
-        <h3>📊 Quantitative Analysis</h3>
+        <h3>Quantitative Analysis</h3>
         <p>View detailed metrics and charts: <a href="../results/quantitative_report.html">Open Quantitative Report</a></p>
     </div>
 </body>
 </html>'''
     
-    with open(base / 'index.html', 'w') as f:
+    with open(base / 'index.html', 'w', encoding='utf-8') as f:
         f.write(main_template)
 
 # ============================================================================
-# PART 2: QUANTITATIVE ANALYSIS
+# PART 2: QUANTITATIVE ANALYSIS (unchanged but with fixed HTML)
 # ============================================================================
 
 def load_metrics():
@@ -477,12 +505,15 @@ def create_overall_statistics(df):
         json.dump(stats, f, indent=2)
 
 def create_quantitative_report():
-    """Create HTML report with all quantitative results"""
+    """Create HTML report with all quantitative results - FIXED VERSION"""
     print("  • Creating quantitative report...")
     
     html_content = """<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Quantitative Analysis Report</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
@@ -495,11 +526,12 @@ def create_quantitative_report():
             border-radius: 5px;
             border-left: 4px solid #4CAF50;
         }
-        img { max-width: 100%; height: auto; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        img { max-width: 100%; height: auto; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block; }
         table { width: 100%; border-collapse: collapse; margin: 20px 0; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: #4CAF50; color: white; }
         tr:hover { background-color: #f5f5f5; }
+        .error-img { background: #f0f0f0; padding: 40px; text-align: center; color: #999; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
@@ -513,21 +545,21 @@ def create_quantitative_report():
     </div>
     
     <h2>1. Overall Statistics</h2>
-    <img src="overall_statistics.png" alt="Overall Statistics">
+    <img src="overall_statistics.png" alt="Overall Statistics" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div class=error-img>Chart not available</div>');">
     
     <h2>2. Detector Comparison (ORB vs AKAZE)</h2>
-    <img src="detector_comparison.png" alt="Detector Comparison">
+    <img src="detector_comparison.png" alt="Detector Comparison" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div class=error-img>Chart not available</div>');">
     <div class="metric-card">
         <p><strong>Key Findings:</strong></p>
         <ul>
-            <li>AKAZE generally detects more keypoints but takes longer to process</li>
-            <li>ORB provides faster processing with acceptable accuracy</li>
-            <li>Both detectors show similar inlier ratios across scenes</li>
+            <li>ORB detects significantly more keypoints (20,000-30,000+)</li>
+            <li>AKAZE is more selective (4,000-5,000 keypoints)</li>
+            <li>Both detectors show similar matching success rates</li>
         </ul>
     </div>
     
     <h2>3. RANSAC Threshold Analysis</h2>
-    <img src="ransac_analysis.png" alt="RANSAC Analysis">
+    <img src="ransac_analysis.png" alt="RANSAC Analysis" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div class=error-img>Chart not available</div>');">
     <div class="metric-card">
         <p><strong>Key Findings:</strong></p>
         <ul>
@@ -538,7 +570,7 @@ def create_quantitative_report():
     </div>
     
     <h2>4. Blending Mode Comparison</h2>
-    <img src="blending_comparison.png" alt="Blending Comparison">
+    <img src="blending_comparison.png" alt="Blending Comparison" onerror="this.style.display='none'; this.insertAdjacentHTML('afterend', '<div class=error-img>Chart not available</div>');">
     <div class="metric-card">
         <p><strong>Key Findings:</strong></p>
         <ul>
@@ -551,10 +583,21 @@ def create_quantitative_report():
     <h2>5. Detailed Metrics</h2>
     <p>Full experimental data available in <a href="metrics.csv">metrics.csv</a></p>
     
+    <script>
+        // Fallback for older browsers
+        if (!window.insertAdjacentHTML) {
+            var imgs = document.getElementsByTagName('img');
+            for (var i = 0; i < imgs.length; i++) {
+                imgs[i].onerror = function() {
+                    this.style.display = 'none';
+                };
+            }
+        }
+    </script>
 </body>
 </html>"""
     
-    with open('results/quantitative_report.html', 'w') as f:
+    with open('results/quantitative_report.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
 
 # ============================================================================

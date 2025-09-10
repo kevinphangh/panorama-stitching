@@ -144,7 +144,7 @@ run_experiment() {
     echo -ne "\r[${TOTAL}/48] Testing: ${label}...                    "
     
     # Run experiment and capture output for metrics
-    local exp_output=$(./build/panorama_stitcher --stitch "$img1" "$img2" \
+    local exp_output=$(./scripts/run_panorama.sh --stitch "$img1" "$img2" \
         --detector "$detector" \
         --ransac-threshold "$threshold" \
         --blend-mode "$blend" \
@@ -187,7 +187,7 @@ run_multi_experiment() {
     echo -ne "\r[${TOTAL}/48] Testing: ${label}...                    "
     
     # Run experiment and capture output
-    local exp_output=$(./build/panorama_stitcher --stitch-multiple "$img1" "$img2" "$img3" \
+    local exp_output=$(./scripts/run_panorama.sh --stitch-multiple "$img1" "$img2" "$img3" \
         --detector "$detector" \
         --output "$output" 2>&1)
     

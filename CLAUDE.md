@@ -1,76 +1,30 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+AI assistant guide for this Visual Computing panorama stitching project.
 
-## Project Overview
-
-Visual Computing Assignment 1 - Real-time panorama stitching system implementing feature detection, matching, homography estimation, and image warping with experimental evaluation framework.
-
-## Build Commands
+## Quick Commands
 
 ```bash
-# Quick build (done automatically by RUN_EXPERIMENTS.sh)
-mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
-
-# Debug build
-cmake .. -DCMAKE_BUILD_TYPE=Debug
-make -j$(nproc)
-
-# Clean rebuild
-rm -rf build && mkdir -p build && cd build && cmake .. && make
-```
-
-## Development Commands
-
-```bash
-# Run panorama stitcher directly
-./build/panorama_stitcher --stitch img1.jpg img2.jpg --output result.jpg
-
-# Multi-image stitching (3+ images)
-./build/panorama_stitcher --stitch-multiple img1.jpg img2.jpg img3.jpg --output panorama.jpg
-
-# Run with specific detector and blending
-./build/panorama_stitcher --stitch img1.jpg img2.jpg --detector akaze --blend-mode multiband
-
-# Run all experiments (recommended)
+# Run all experiments
 ./RUN_EXPERIMENTS.sh
 
-# Run tests (when implemented)
-cd build && ctest
+# Manual build
+cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
+
+# Test single stitch
+./scripts/run_panorama.sh --stitch img1.jpg img2.jpg --output result.jpg
 ```
 
-## Architecture Overview
+## Architecture
 
-The codebase follows a modular pipeline architecture:
+- **Feature Detection**: ORB & AKAZE detectors (src/feature_detection/)
+- **Matching**: Brute-force with Lowe's ratio test (src/feature_matching/)
+- **RANSAC**: Homography estimation with outlier removal
+- **Blending**: Simple, Feather, Multiband modes (src/stitching/)
+- **Max Features**: Set to 50,000 for true performance
 
-1. **Feature Detection** (`src/feature_detection/`): Abstract `FeatureDetector` base class with ORB and AKAZE implementations. Detectors extract keypoints and descriptors from input images.
+## Key Files
 
-2. **Feature Matching** (`src/feature_matching/`): `Matcher` class performs brute-force matching with Lowe's ratio test. `RANSAC` class filters matches using homography estimation to remove outliers.
-
-3. **Homography Estimation** (`src/homography/`): `HomographyEstimator` uses RANSAC with OpenCV's homography estimation for robust computation of homography matrices from point correspondences.
-
-4. **Image Warping & Blending** (`src/stitching/`): `ImageWarper` applies perspective transformations. `Blender` supports three modes: simple overlay, feathering, and multiband (Laplacian pyramid) blending.
-
-5. **Experiment Framework** (`src/experiments/`): `ExperimentRunner` executes performance evaluations across different datasets and parameter configurations, collecting timing and quality metrics.
-
-The main application (`src/main.cpp`) provides a CLI interface that orchestrates these components. All modules use OpenCV for core computer vision operations and support configurable parameters for experimentation.
-
-## Key Implementation Details
-
-- **C++17** with OpenCV 4.x for computer vision operations
-- Template-based timing utilities for performance measurement
-- RANSAC uses adaptive iteration count based on inlier ratio
-- Multiband blending uses 5-level Laplacian pyramids
-- Thread-safe operations for potential parallelization
-- Configurable parameters: detector type, blend mode, RANSAC threshold, output format
-
-## Testing Datasets
-
-Three test dataset directories in `datasets/`:
-- `indoor_scene/`: Indoor environment images (3 images: img1.jpg, img2.jpg, img3.jpg)
-- `outdoor_scene1/`: Outdoor scene set 1 (currently empty - add images for testing)
-- `outdoor_scene2/`: Outdoor scene set 2 (currently empty - add images for testing)
-
-Note: Only indoor_scene currently contains test images. Add images to outdoor directories for full experiment testing.
+- `RUN_EXPERIMENTS.sh` - Main experiment runner (48 tests)
+- `scripts/analyze_results.py` - Results organization & analysis
+- `src/config.h` - Configuration constants

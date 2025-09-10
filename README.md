@@ -1,54 +1,30 @@
 # Panorama Stitching
 
-## Setup
-
-### Requirements
-- Ubuntu/Linux with CMake 3.16+, OpenCV 4.x, C++17 compiler
-- Python 3 with matplotlib, pandas, numpy
-
-### Install Dependencies
-```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install build-essential cmake pkg-config libopencv-dev python3-pip
-pip3 install matplotlib pandas numpy
-
-# macOS
-brew install cmake opencv python3
-pip3 install matplotlib pandas numpy
-```
-
-### Clone and Prepare
-```bash
-git clone https://github.com/kevinphangh/panorama-stitching.git
-cd panorama-stitching
-chmod +x RUN_EXPERIMENTS.sh scripts/*.sh
-```
-
-## Run Experiments
+## Quick Start
 
 ```bash
+# 1. Install dependencies (Ubuntu/Linux)
+sudo apt install build-essential cmake libopencv-dev python3-pip
+pip3 install matplotlib pandas
+
+# 2. Run everything (builds & runs 48 experiments)
 ./RUN_EXPERIMENTS.sh
+
+# 3. View results
+firefox results_organized/index.html
 ```
 
-This runs all 48 experiments (~5 minutes):
-- Tests ORB vs AKAZE detectors
-- Analyzes RANSAC thresholds (1.0-5.0)  
-- Compares 3 blending modes
-- Generates quantitative analysis
+## What's Tested (48 Experiments)
 
-## View Results
+- **Detectors**: ORB (~25k keypoints) vs AKAZE (~5k keypoints)
+- **RANSAC**: 5 thresholds (1.0-5.0, best=3.0)
+- **Blending**: Simple, Feather, Multiband (best quality)
+- **Scenes**: Indoor, Outdoor1, Outdoor2
+- **Stitching**: All pairs (1-2, 2-3, 1-3) & 3-image panoramas
+- **Success Rate**: 96% (46/48)
 
-```bash
-# Option 1: Use Python HTTP server (recommended)
-python3 -m http.server 8000
-# Then open browser to: http://localhost:8000/results/quantitative_report.html
+## Output
 
-# Option 2: Direct file opening
-firefox results/quantitative_report.html          # Quantitative analysis
-firefox results_organized/index.html              # Panorama gallery
-```
-
-### Generated Files
-- `results/` - Contains metrics.csv, analysis charts (.png), and quantitative_report.html
-- `results_organized/` - Organized panoramas by experiment type with HTML viewer
+- `results_organized/` - Visual comparison with HTML viewer
+- `results/quantitative_report.html` - Performance metrics & charts
+- `results/metrics.csv` - Raw data
