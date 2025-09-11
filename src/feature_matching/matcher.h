@@ -8,7 +8,7 @@
 
 struct MatchingResult {
     std::vector<cv::DMatch> good_matches;
-    std::vector<double> match_distances;  // Store all match distances
+    std::vector<double> match_distances;
     double matching_time_ms;
     double filtering_time_ms;
     double ratio_test_threshold;

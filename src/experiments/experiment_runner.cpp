@@ -142,7 +142,6 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
     
     auto total_start = std::chrono::high_resolution_clock::now();
     
-    // Load images
     cv::Mat img1 = cv::imread(img1_path);
     cv::Mat img2 = cv::imread(img2_path);
     
@@ -151,7 +150,20 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
         return result;
     }
     
-    // Feature detection
+    // Save original images for visualization
+    std::string exp_name = fs::path(img1_path).parent_path().filename().string() + "_" + 
+                          fs::path(img1_path).stem().string() + "_" + 
+                          fs::path(img2_path).stem().string() + "_" + 
+                          config.detector_type;
+    
+    std::string viz_dir = "results/visualizations";
+    if (!fs::exists(viz_dir)) {
+        fs::create_directories(viz_dir);
+    }
+    
+    cv::imwrite(viz_dir + "/" + exp_name + "_img1.jpg", img1);
+    cv::imwrite(viz_dir + "/" + exp_name + "_img2.jpg", img2);
+    
     std::unique_ptr<FeatureDetector> detector;
     if (config.detector_type == "orb") {
         detector = std::make_unique<ORBDetector>();
@@ -168,7 +180,15 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
     result.detection_time_ms = det_result1.detection_time_ms + det_result2.detection_time_ms;
     result.description_time_ms = det_result1.description_time_ms + det_result2.description_time_ms;
     
-    // Feature matching
+    // Save keypoint visualizations
+    cv::Mat kp_vis1, kp_vis2;
+    cv::drawKeypoints(img1, det_result1.keypoints, kp_vis1, cv::Scalar(0, 255, 0), 
+                     cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+    cv::drawKeypoints(img2, det_result2.keypoints, kp_vis2, cv::Scalar(0, 255, 0),
+                     cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+    cv::imwrite(viz_dir + "/" + exp_name + "_keypoints1.jpg", kp_vis1);
+    cv::imwrite(viz_dir + "/" + exp_name + "_keypoints2.jpg", kp_vis2);
+    
     FeatureMatcher matcher;
     auto match_result = matcher.matchFeatures(
         det_result1.descriptors, det_result2.descriptors,
@@ -181,7 +201,14 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
     result.matching_time_ms = match_result.matching_time_ms;
     result.match_distances = match_result.match_distances;
     
-    // Homography estimation
+    // Save match visualization (before RANSAC)
+    cv::Mat match_vis;
+    cv::drawMatches(img1, det_result1.keypoints, img2, det_result2.keypoints,
+                   match_result.good_matches, match_vis, cv::Scalar(0, 255, 0),
+                   cv::Scalar(255, 0, 0), std::vector<char>(),
+                   cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+    cv::imwrite(viz_dir + "/" + exp_name + "_matches_before.jpg", match_vis);
+    
     auto h_start = std::chrono::high_resolution_clock::now();
     HomographyEstimator h_estimator;
     h_estimator.setRANSACThreshold(config.ransac_threshold);
@@ -200,17 +227,28 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
     result.ransac_iterations = ransac_result.num_iterations;
     result.homography_time_ms = std::chrono::duration<double, std::milli>(h_end - h_start).count();
     
-    // Image stitching
+    // Save inlier match visualization (after RANSAC)
+    if (!inlier_matches.empty()) {
+        cv::Mat inlier_vis;
+        cv::drawMatches(img1, det_result1.keypoints, img2, det_result2.keypoints,
+                       inlier_matches, inlier_vis, cv::Scalar(0, 255, 0),
+                       cv::Scalar(255, 0, 0), std::vector<char>(),
+                       cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+        cv::imwrite(viz_dir + "/" + exp_name + "_matches_after.jpg", inlier_vis);
+    }
+    
     if (!homography.empty()) {
-        // Warp
+        auto warp_start = std::chrono::high_resolution_clock::now();
         ImageWarper warper;
         auto bounds = HomographyEstimator::calculateOutputBounds(img1, img2, homography);
         cv::Mat panorama = cv::Mat::zeros(bounds.height, bounds.width, img1.type());
         img1.copyTo(panorama(cv::Rect(0, 0, img1.cols, img1.rows)));
         
         cv::Mat warped2 = warper.warpPerspective(img2, homography, panorama.size());
+        auto warp_end = std::chrono::high_resolution_clock::now();
+        result.warping_time_ms = std::chrono::duration<double, std::milli>(warp_end - warp_start).count();
         
-        // Blend
+        auto blend_start = std::chrono::high_resolution_clock::now();
         Blender blender;
         if (config.blend_mode == "simple") {
             blender.setBlendMode(BlendMode::SIMPLE_OVERLAY);
@@ -227,6 +265,8 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
                            mask2, homography, panorama.size());
         
         result.panorama = blender.blend(panorama, warped2, mask1, mask2);
+        auto blend_end = std::chrono::high_resolution_clock::now();
+        result.blending_time_ms = std::chrono::duration<double, std::milli>(blend_end - blend_start).count();
     }
     
     auto total_end = std::chrono::high_resolution_clock::now();
@@ -261,7 +301,6 @@ void ExperimentRunner::saveResults(const std::string& output_dir) {
         fs::create_directories(output_dir);
     }
     
-    // Save panoramas
     int idx = 0;
     for (const auto& result : results_) {
         if (!result.panorama.empty()) {
@@ -278,13 +317,11 @@ void ExperimentRunner::saveResults(const std::string& output_dir) {
 void ExperimentRunner::exportMetricsToCSV(const std::string& csv_path) {
     std::ofstream file(csv_path);
     
-    // Write header
     file << "experiment,detector,ransac_threshold,blend_mode,";
     file << "num_keypoints_1,num_keypoints_2,num_matches,num_inliers,";
     file << "inlier_ratio,reprojection_error,";
-    file << "detection_time,matching_time,homography_time,total_time\n";
+    file << "detection_time,matching_time,homography_time,warping_time,blending_time,total_time\n";
     
-    // Write data
     for (const auto& result : results_) {
         file << result.config.name << ","
              << result.config.detector_type << ","
@@ -299,6 +336,8 @@ void ExperimentRunner::exportMetricsToCSV(const std::string& csv_path) {
              << result.detection_time_ms << ","
              << result.matching_time_ms << ","
              << result.homography_time_ms << ","
+             << result.warping_time_ms << ","
+             << result.blending_time_ms << ","
              << result.total_time_ms << "\n";
     }
     

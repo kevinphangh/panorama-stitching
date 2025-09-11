@@ -6,8 +6,7 @@ ORBDetector::ORBDetector() {
 }
 
 void ORBDetector::createDetector() {
-    // Create ORB detector with specified max features
-    // Note: ORB will detect UP TO max_features, but may find fewer if image lacks features
+    // ORB will detect UP TO max_features, but may find fewer if image lacks sufficient features
     detector_ = cv::ORB::create(max_features_, 1.2f, 8, 31, 0, 2, 
                                cv::ORB::HARRIS_SCORE, 31, 20);
 }
@@ -15,7 +14,7 @@ void ORBDetector::createDetector() {
 void ORBDetector::setMaxFeatures(int max_features) {
     if (max_features != max_features_) {
         max_features_ = max_features;
-        createDetector();  // Recreate detector with new max_features
+        createDetector();
     }
 }
 
@@ -30,12 +29,10 @@ DetectionResult ORBDetector::detect(const cv::Mat& image) {
         gray = image;
     }
     
-    // Detect keypoints
     result.detection_time_ms = measureTime([&]() {
         detector_->detect(gray, result.keypoints);
     });
     
-    // Compute descriptors
     result.description_time_ms = measureTime([&]() {
         detector_->compute(gray, result.keypoints, result.descriptors);
     });

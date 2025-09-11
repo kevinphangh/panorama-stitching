@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualization Showcase</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { 
+            color: #333; 
+            border-bottom: 3px solid #667eea; 
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        .description {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+        .experiment { 
+            background: #fff; 
+            padding: 25px; 
+            margin: 30px 0; 
+            border-radius: 10px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+        .experiment h2 { 
+            color: #667eea; 
+            margin-top: 0;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .viz-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 25px; 
+            margin-top: 25px; 
+        }
+        .viz-item { 
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .viz-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .viz-item img { 
+            width: 100%; 
+            height: auto; 
+            border-radius: 5px; 
+            display: block;
+        }
+        .viz-item h3 { 
+            margin: 0 0 10px 0; 
+            font-size: 14px; 
+            color: #666;
+            text-align: center;
+            background: white;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        .navigation { 
+            margin-bottom: 20px; 
+        }
+        .navigation a { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            padding: 12px 25px; 
+            text-decoration: none; 
+            border-radius: 25px; 
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        .navigation a:hover { 
+            transform: scale(1.05);
+        }
+        .stats-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="navigation">
+            <a href="../index.html">← Back to Main Results</a>
+        </div>
+        <h1>🔬 Visualization Showcase</h1>
+        
+        <div class="description">
+            <h3>📚 Understanding the Visualizations</h3>
+            <p><strong>What are ORB and AKAZE?</strong></p>
+            <ul style="margin-bottom: 15px;">
+                <li><strong>ORB (Oriented FAST and Rotated BRIEF):</strong> A FAST detector that finds many keypoints quickly. 
+                    Good for speed, finds corners and edges. Shows up as many small green circles (~25,000-50,000 points).</li>
+                <li><strong>AKAZE (Accelerated-KAZE):</strong> A more sophisticated detector that finds fewer but more stable keypoints. 
+                    Better for accuracy, finds distinctive features. Shows up as fewer larger circles (~5,000-20,000 points).</li>
+            </ul>
+            
+            <p><strong>What Each Visualization Shows:</strong></p>
+            <ul>
+                <li><strong>Original Images:</strong> The raw input photos before any processing</li>
+                <li><strong>Keypoints (Green Circles):</strong> Points the algorithm thinks are interesting/matchable 
+                    - like corners, edges, or unique patterns. Bigger circles = larger scale features.</li>
+                <li><strong>Initial Matches (Lines):</strong> All potential correspondences between images - many are wrong!</li>
+                <li><strong>RANSAC Filtered (Final Matches):</strong> Only the correct matches after removing outliers. 
+                    These are used to compute how to align the images.</li>
+            </ul>
+            
+            <p style="background: #e8f4f8; padding: 10px; border-radius: 5px; margin-top: 15px;">
+                <strong>💡 Simple Explanation:</strong> The algorithm finds interesting points in both images (keypoints), 
+                matches similar ones between images (matching), then removes incorrect matches (RANSAC) to properly align and stitch them together.
+            </p>
+        </div>
+        
+        <div class="stats-box">
+            <strong>12 Experiments | 72 Visualizations</strong>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Indoor Scene Img1 Img3 Akaze</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="indoor_scene_img1_img3_akaze_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="indoor_scene_img1_img3_akaze_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="indoor_scene_img1_img3_akaze_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="indoor_scene_img1_img3_akaze_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="indoor_scene_img1_img3_akaze_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="indoor_scene_img1_img3_akaze_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Indoor Scene Img1 Img3 Orb</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="indoor_scene_img1_img3_orb_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="indoor_scene_img1_img3_orb_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="indoor_scene_img1_img3_orb_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="indoor_scene_img1_img3_orb_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="indoor_scene_img1_img3_orb_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="indoor_scene_img1_img3_orb_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Indoor Scene Img3 Img2 Akaze</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="indoor_scene_img3_img2_akaze_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="indoor_scene_img3_img2_akaze_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="indoor_scene_img3_img2_akaze_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="indoor_scene_img3_img2_akaze_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="indoor_scene_img3_img2_akaze_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="indoor_scene_img3_img2_akaze_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Indoor Scene Img3 Img2 Orb</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="indoor_scene_img3_img2_orb_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="indoor_scene_img3_img2_orb_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="indoor_scene_img3_img2_orb_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="indoor_scene_img3_img2_orb_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="indoor_scene_img3_img2_orb_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="indoor_scene_img3_img2_orb_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Outdoor Scene1 Img1 Img3 Akaze</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="outdoor_scene1_img1_img3_akaze_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="outdoor_scene1_img1_img3_akaze_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="outdoor_scene1_img1_img3_akaze_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="outdoor_scene1_img1_img3_akaze_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="outdoor_scene1_img1_img3_akaze_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="outdoor_scene1_img1_img3_akaze_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Outdoor Scene1 Img1 Img3 Orb</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="outdoor_scene1_img1_img3_orb_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="outdoor_scene1_img1_img3_orb_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="outdoor_scene1_img1_img3_orb_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="outdoor_scene1_img1_img3_orb_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="outdoor_scene1_img1_img3_orb_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="outdoor_scene1_img1_img3_orb_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Outdoor Scene1 Img3 Img2 Akaze</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="outdoor_scene1_img3_img2_akaze_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="outdoor_scene1_img3_img2_akaze_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="outdoor_scene1_img3_img2_akaze_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="outdoor_scene1_img3_img2_akaze_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="outdoor_scene1_img3_img2_akaze_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="outdoor_scene1_img3_img2_akaze_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Outdoor Scene1 Img3 Img2 Orb</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="outdoor_scene1_img3_img2_orb_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="outdoor_scene1_img3_img2_orb_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="outdoor_scene1_img3_img2_orb_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="outdoor_scene1_img3_img2_orb_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="outdoor_scene1_img3_img2_orb_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="outdoor_scene1_img3_img2_orb_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Outdoor Scene2 Img1 Img3 Akaze</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="outdoor_scene2_img1_img3_akaze_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="outdoor_scene2_img1_img3_akaze_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="outdoor_scene2_img1_img3_akaze_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="outdoor_scene2_img1_img3_akaze_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="outdoor_scene2_img1_img3_akaze_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="outdoor_scene2_img1_img3_akaze_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Outdoor Scene2 Img1 Img3 Orb</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="outdoor_scene2_img1_img3_orb_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="outdoor_scene2_img1_img3_orb_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="outdoor_scene2_img1_img3_orb_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="outdoor_scene2_img1_img3_orb_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="outdoor_scene2_img1_img3_orb_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="outdoor_scene2_img1_img3_orb_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Outdoor Scene2 Img3 Img2 Akaze</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="outdoor_scene2_img3_img2_akaze_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="outdoor_scene2_img3_img2_akaze_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="outdoor_scene2_img3_img2_akaze_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="outdoor_scene2_img3_img2_akaze_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="outdoor_scene2_img3_img2_akaze_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="outdoor_scene2_img3_img2_akaze_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="experiment">
+            <h2>📊 Outdoor Scene2 Img3 Img2 Orb</h2>
+            <div class="viz-grid">
+
+                <div class="viz-item">
+                    <h3>Original Image 1</h3>
+                    <img src="outdoor_scene2_img3_img2_orb_img1.jpg" alt="Original Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Original Image 2</h3>
+                    <img src="outdoor_scene2_img3_img2_orb_img2.jpg" alt="Original Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 1</h3>
+                    <img src="outdoor_scene2_img3_img2_orb_keypoints1.jpg" alt="Keypoints - Image 1" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Keypoints - Image 2</h3>
+                    <img src="outdoor_scene2_img3_img2_orb_keypoints2.jpg" alt="Keypoints - Image 2" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Initial Matches</h3>
+                    <img src="outdoor_scene2_img3_img2_orb_matches_before.jpg" alt="Initial Matches" loading="lazy">
+                </div>
+
+                <div class="viz-item">
+                    <h3>Inlier Matches (RANSAC)</h3>
+                    <img src="outdoor_scene2_img3_img2_orb_matches_after.jpg" alt="Inlier Matches (RANSAC)" loading="lazy">
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -46,7 +46,6 @@ MatchingResult FeatureMatcher::matchFeatures(
         return result;
     }
     
-    // Perform matching
     std::vector<std::vector<cv::DMatch>> knn_matches;
     
     auto start = std::chrono::high_resolution_clock::now();
@@ -56,7 +55,6 @@ MatchingResult FeatureMatcher::matchFeatures(
     
     result.num_initial_matches = knn_matches.size();
     
-    // Apply ratio test
     start = std::chrono::high_resolution_clock::now();
     result.good_matches = ratioTest(knn_matches, ratio_threshold);
     end = std::chrono::high_resolution_clock::now();
@@ -85,7 +83,7 @@ std::vector<cv::DMatch> FeatureMatcher::ratioTest(
                 good_matches.push_back(match_pair[0]);
             }
         } else if (match_pair.size() == 1) {
-            // If only one match found, accept it
+            // Single match with no second-best to compare - include it
             good_matches.push_back(match_pair[0]);
         }
     }

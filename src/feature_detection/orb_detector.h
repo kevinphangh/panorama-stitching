@@ -16,4 +16,4 @@ private:
     void createDetector();
 };
 
-#endif // ORB_DETECTOR_H
+#endif

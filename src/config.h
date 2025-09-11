@@ -3,15 +3,15 @@
 
 namespace PanoramaConfig {
     // Feature Detection Configuration
-    constexpr int DEFAULT_MAX_FEATURES = 50000;  // Set high to see true detector performance
+    constexpr int DEFAULT_MAX_FEATURES = 50000;  // Set high to avoid artificially limiting detector capabilities
     constexpr int MIN_FEATURES = 10;
     constexpr int MAX_FEATURES = 50000;
     
     // RANSAC Configuration
-    constexpr double DEFAULT_RANSAC_THRESHOLD = 3.0;
+    constexpr double DEFAULT_RANSAC_THRESHOLD = 3.0;  // Pixels - max reprojection error for inliers
     constexpr double MIN_RANSAC_THRESHOLD = 0.1;
     constexpr double MAX_RANSAC_THRESHOLD = 50.0;
-    constexpr double DEFAULT_RANSAC_CONFIDENCE = 0.995;
+    constexpr double DEFAULT_RANSAC_CONFIDENCE = 0.995;  // Probability of finding correct model
     constexpr int DEFAULT_RANSAC_MAX_ITERATIONS = 2000;
     constexpr int MIN_INLIERS_REQUIRED = 20;
     
@@ -22,10 +22,10 @@ namespace PanoramaConfig {
     constexpr size_t MAX_PANORAMA_MEMORY = 2147483648;  // 2GB max memory for panorama
     
     // Homography Validation
-    constexpr double MIN_HOMOGRAPHY_DETERMINANT = 0.001;
+    constexpr double MIN_HOMOGRAPHY_DETERMINANT = 0.001;  // Prevents degenerate transformations
     constexpr double MAX_HOMOGRAPHY_DETERMINANT = 1000.0;
-    constexpr double MIN_HOMOGRAPHY_SCALE = 0.1;
-    constexpr double MAX_HOMOGRAPHY_SCALE = 10.0;
+    constexpr double MIN_HOMOGRAPHY_SCALE = 0.1;  // Prevents excessive shrinking
+    constexpr double MAX_HOMOGRAPHY_SCALE = 10.0;  // Prevents excessive magnification
     constexpr double HOMOGRAPHY_EPSILON = 1e-10;
     
     // Image Size Reference (for adaptive feature scaling)

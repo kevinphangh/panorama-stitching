@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panorama Stitching Analysis Report</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 20px;
+            background: #f5f6fa;
+        }
+        h1 { 
+            color: #2c3e50; 
+            border-bottom: 3px solid #3498db; 
+            padding-bottom: 15px; 
+        }
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+        }
+        img { 
+            max-width: 100%; 
+            height: auto; 
+            margin: 20px 0; 
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .gallery-item {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .gallery-item:hover {
+            transform: scale(1.05);
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            margin: 0;
+        }
+        .gallery-item h4 {
+            margin: 10px 0 5px 0;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+        .panorama-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .panorama-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        }
+        .panorama-item img {
+            width: 100%;
+            height: auto;
+            margin: 10px 0;
+        }
+        .panorama-item h3 {
+            color: #3498db;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        th {
+            background: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        .note {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .viz-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            margin: 20px 0;
+            transition: transform 0.3s ease;
+        }
+        .viz-link:hover {
+            transform: scale(1.05);
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            border-bottom: 2px solid #3498db;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: white;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .tab:hover {
+            background: #f0f0f0;
+        }
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>📊 Panorama Stitching - Complete Analysis Report</h1>
+    
+    <div class="summary">
+        <h2 style="margin-top: 0; color: white;">Executive Summary</h2>
+        <p style="font-size: 18px;">Analyzed <strong>60</strong> experiments with 
+        <strong>0.0%</strong> success rate</p>
+        <p>Generated <strong>60</strong> panoramas across 3 scenes</p>
+    </div>
+
+    <div class="metric-card">
+        <h3>Detector Comparison</h3>
+        <table>
+            <tr>
+                <th>Detector</th>
+                <th>Avg Keypoints</th>
+                <th>Avg Matches</th>
+                <th>Avg Inliers</th>
+            </tr>
+
+            <tr>
+                <td><strong>AKAZE</strong></td>
+                <td>504</td>
+                <td>21</td>
+                <td>7</td>
+            </tr>
+
+            <tr>
+                <td><strong>ORB</strong></td>
+                <td>998</td>
+                <td>19</td>
+                <td>5</td>
+            </tr>
+
+        </table>
+    </div>
+
+    <div class="metric-card">
+        <h3>Processing Time Analysis</h3>
+        <img src="processing_times.png" alt="Processing Times">
+        <p>The chart shows processing time breakdown by stage and comparison across different configurations.</p>
+    </div>
+
+    <div class="metric-card">
+        <h3>🖼️ Original Dataset Images</h3>
+        <p>Input images used for panorama stitching experiments:</p>
+
+        <h4 style="color: #667eea; margin-top: 20px;">Indoor Scene</h4>
+        <div class="image-gallery">
+
+            <div class="gallery-item">
+                <img src="datasets/indoor_scene/img1.jpg" alt="img1.jpg">
+                <h4>img1.jpg</h4>
+            </div>
+
+            <div class="gallery-item">
+                <img src="datasets/indoor_scene/img2.jpg" alt="img2.jpg">
+                <h4>img2.jpg</h4>
+            </div>
+
+            <div class="gallery-item">
+                <img src="datasets/indoor_scene/img3.jpg" alt="img3.jpg">
+                <h4>img3.jpg</h4>
+            </div>
+        </div>
+
+        <h4 style="color: #667eea; margin-top: 20px;">Outdoor Scene1</h4>
+        <div class="image-gallery">
+
+            <div class="gallery-item">
+                <img src="datasets/outdoor_scene1/img1.jpg" alt="img1.jpg">
+                <h4>img1.jpg</h4>
+            </div>
+
+            <div class="gallery-item">
+                <img src="datasets/outdoor_scene1/img2.jpg" alt="img2.jpg">
+                <h4>img2.jpg</h4>
+            </div>
+
+            <div class="gallery-item">
+                <img src="datasets/outdoor_scene1/img3.jpg" alt="img3.jpg">
+                <h4>img3.jpg</h4>
+            </div>
+        </div>
+
+        <h4 style="color: #667eea; margin-top: 20px;">Outdoor Scene2</h4>
+        <div class="image-gallery">
+
+            <div class="gallery-item">
+                <img src="datasets/outdoor_scene2/img1.jpg" alt="img1.jpg">
+                <h4>img1.jpg</h4>
+            </div>
+
+            <div class="gallery-item">
+                <img src="datasets/outdoor_scene2/img2.jpg" alt="img2.jpg">
+                <h4>img2.jpg</h4>
+            </div>
+
+            <div class="gallery-item">
+                <img src="datasets/outdoor_scene2/img3.jpg" alt="img3.jpg">
+                <h4>img3.jpg</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <h3>🎯 All Stitched Panorama Results</h3>
+        <p><strong>What are these images?</strong> These are the final stitched panoramas created by aligning and blending image pairs. 
+        Each shows two images merged into one wider view.</p>
+        
+        <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <strong>How to interpret the results:</strong>
+            <ul style="margin: 10px 0;">
+                <li>✅ <strong>Good stitching:</strong> Smooth transitions, aligned features, no visible seams</li>
+                <li>⚠️ <strong>Partial success:</strong> Some alignment but visible artifacts or distortions</li>
+                <li>❌ <strong>Failed stitching:</strong> Misaligned images, severe distortions, or black areas</li>
+            </ul>
+        </div>
+        
+        <h4 style="color: #667eea;">ORB Detector Results</h4>
+        <div class="panorama-showcase">
+
+            <div class="panorama-item">
+                <h3>ORB Test #0</h3>
+                <img src="panoramas/panorama_orb_0.jpg" alt="panorama_orb_0.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_0.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>ORB Test #10</h3>
+                <img src="panoramas/panorama_orb_10.jpg" alt="panorama_orb_10.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_10.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>ORB Test #12</h3>
+                <img src="panoramas/panorama_orb_12.jpg" alt="panorama_orb_12.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_12.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>ORB Test #13</h3>
+                <img src="panoramas/panorama_orb_13.jpg" alt="panorama_orb_13.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_13.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>ORB Test #14</h3>
+                <img src="panoramas/panorama_orb_14.jpg" alt="panorama_orb_14.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_14.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>ORB Test #15</h3>
+                <img src="panoramas/panorama_orb_15.jpg" alt="panorama_orb_15.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_15.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>ORB Test #16</h3>
+                <img src="panoramas/panorama_orb_16.jpg" alt="panorama_orb_16.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_16.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>ORB Test #17</h3>
+                <img src="panoramas/panorama_orb_17.jpg" alt="panorama_orb_17.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_17.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>ORB Test #18</h3>
+                <img src="panoramas/panorama_orb_18.jpg" alt="panorama_orb_18.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_18.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>ORB Test #19</h3>
+                <img src="panoramas/panorama_orb_19.jpg" alt="panorama_orb_19.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_19.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>ORB Test #2</h3>
+                <img src="panoramas/panorama_orb_2.jpg" alt="panorama_orb_2.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_2.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>ORB Test #20</h3>
+                <img src="panoramas/panorama_orb_20.jpg" alt="panorama_orb_20.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_orb_20.jpg</p>
+            </div>
+
+        </div>
+        
+        <h4 style="color: #667eea; margin-top: 30px;">AKAZE Detector Results</h4>
+        <div class="panorama-showcase">
+
+            <div class="panorama-item">
+                <h3>AKAZE Test #1</h3>
+                <img src="panoramas/panorama_akaze_1.jpg" alt="panorama_akaze_1.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_akaze_1.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>AKAZE Test #11</h3>
+                <img src="panoramas/panorama_akaze_11.jpg" alt="panorama_akaze_11.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_akaze_11.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>AKAZE Test #3</h3>
+                <img src="panoramas/panorama_akaze_3.jpg" alt="panorama_akaze_3.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_akaze_3.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>AKAZE Test #5</h3>
+                <img src="panoramas/panorama_akaze_5.jpg" alt="panorama_akaze_5.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_akaze_5.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>AKAZE Test #7</h3>
+                <img src="panoramas/panorama_akaze_7.jpg" alt="panorama_akaze_7.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_akaze_7.jpg</p>
+            </div>
+
+            <div class="panorama-item">
+                <h3>AKAZE Test #9</h3>
+                <img src="panoramas/panorama_akaze_9.jpg" alt="panorama_akaze_9.jpg" title="Click to view full size">
+                <p style="font-size: 11px; color: #666; margin: 5px 0;">File: panorama_akaze_9.jpg</p>
+            </div>
+
+        </div>
+        
+        <p style="text-align: center; margin-top: 20px; background: #fff3cd; padding: 10px; border-radius: 5px;">
+            <strong>📊 Statistics:</strong> Generated 54 ORB panoramas and 6 AKAZE panoramas<br>
+            <em>Showing first 12 results from each detector. All 60 panoramas are available in the panoramas/ folder.</em>
+        </p>
+    </div>
+
+    <div style="text-align: center; margin: 40px 0;">
+        <a href="visualizations/index.html" class="viz-link">
+            🔬 View Feature Detection & Matching Visualizations
+        </a>
+        <p style="margin-top: 10px;">See keypoints, matches, and RANSAC filtering for all experiments</p>
+    </div>
+
+    <div class="metric-card">
+        <h3>📈 Additional Analysis Charts</h3>
+        <div class="image-gallery">
+
+            <div class="gallery-item" style="grid-column: span 2;">
+                <img src="blending_comparison.jpg" alt="blending_comparison.jpg" style="height: auto;">
+                <h4>Blending Comparison</h4>
+            </div>
+
+            <div class="gallery-item" style="grid-column: span 2;">
+                <img src="detector_comparison.jpg" alt="detector_comparison.jpg" style="height: auto;">
+                <h4>Detector Comparison</h4>
+            </div>
+
+            <div class="gallery-item" style="grid-column: span 2;">
+                <img src="inlier_comparison.jpg" alt="inlier_comparison.jpg" style="height: auto;">
+                <h4>Inlier Comparison</h4>
+            </div>
+
+            <div class="gallery-item" style="grid-column: span 2;">
+                <img src="ransac_threshold_plot.jpg" alt="ransac_threshold_plot.jpg" style="height: auto;">
+                <h4>Ransac Threshold Plot</h4>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="note">
+        <strong>Note on Results:</strong> 
+        <ul style="margin: 10px 0;">
+            <li>Processing times include all stages: detection, matching, homography, warping, and blending</li>
+            <li>ORB detector produces more keypoints (~25k-50k) for denser matching</li>
+            <li>AKAZE detector provides fewer but more stable keypoints (~5k-20k)</li>
+            <li>Multiband blending produces smoother transitions but takes more time</li>
+        </ul>
+    </div>
+
+</body>
+</html>

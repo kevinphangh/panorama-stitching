@@ -27,9 +27,8 @@ if(OpenMP_CXX_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-# Source files
-set(SOURCES
-    src/main.cpp
+# Common source files (without main)
+set(COMMON_SOURCES
     src/feature_detection/feature_detector.cpp
     src/feature_detection/orb_detector.cpp
     src/feature_detection/akaze_detector.cpp
@@ -47,8 +46,8 @@ set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-# Create executable
-add_executable(panorama_stitcher ${SOURCES})
+# Create original executable
+add_executable(panorama_stitcher src/main.cpp ${COMMON_SOURCES})
 
 # Set properties to handle conda/system library conflicts
 set_target_properties(panorama_stitcher PROPERTIES
@@ -60,6 +59,7 @@ set_target_properties(panorama_stitcher PROPERTIES
 target_link_libraries(panorama_stitcher 
     ${OpenCV_LIBS}
     Threads::Threads
+    stdc++fs  # For std::filesystem
 )
 
 if(OpenMP_CXX_FOUND)

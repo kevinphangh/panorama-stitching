@@ -30,7 +30,7 @@ public:
     
     
 protected:
-    int max_features_ = 50000;  // Set very high to see true detector performance
+    int max_features_ = 50000;  // Set high to avoid artificially limiting detector capabilities
     
     template<typename Func>
     double measureTime(Func func) {

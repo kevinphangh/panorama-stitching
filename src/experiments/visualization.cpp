@@ -17,12 +17,10 @@ cv::Mat Visualization::generateMatchDistanceHistogram(
         return cv::Mat();
     }
     
-    // Parameters for histogram
     int hist_w = 800;
     int hist_h = 400;
     int bin_count = 50;
     
-    // Find min and max distances
     double min_dist = *std::min_element(distances.begin(), distances.end());
     double max_dist = *std::max_element(distances.begin(), distances.end());
     
@@ -30,11 +28,9 @@ cv::Mat Visualization::generateMatchDistanceHistogram(
         max_dist = min_dist + 1.0;
     }
     
-    // Create histogram bins
     std::vector<int> histogram(bin_count, 0);
     double bin_width = (max_dist - min_dist) / bin_count;
     
-    // Fill histogram
     for (double dist : distances) {
         int bin = static_cast<int>((dist - min_dist) / bin_width);
         if (bin >= bin_count) bin = bin_count - 1;
@@ -42,13 +38,10 @@ cv::Mat Visualization::generateMatchDistanceHistogram(
         histogram[bin]++;
     }
     
-    // Find max count for scaling
     int max_count = *std::max_element(histogram.begin(), histogram.end());
     
-    // Draw histogram
     cv::Mat hist_image = drawHistogram(histogram, hist_w, hist_h, bin_count, max_count, title);
     
-    // Add labels
     cv::putText(hist_image, "Distance", 
                 cv::Point(hist_w/2 - 30, hist_h - 10),
                 cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0), 1);
@@ -57,7 +50,6 @@ cv::Mat Visualization::generateMatchDistanceHistogram(
                 cv::Point(10, 20),
                 cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0), 1);
     
-    // Add statistics
     double mean = std::accumulate(distances.begin(), distances.end(), 0.0) / distances.size();
     std::stringstream stats;
     stats << "Mean: " << std::fixed << std::setprecision(2) << mean 
@@ -87,16 +79,14 @@ cv::Mat Visualization::plotMetrics(
     int plot_h = 600;
     int margin = 80;
     
-    // Create white background
     cv::Mat plot_image(plot_h, plot_w, CV_8UC3, cv::Scalar(255, 255, 255));
     
-    // Find data ranges
     double x_min = *std::min_element(x_values.begin(), x_values.end());
     double x_max = *std::max_element(x_values.begin(), x_values.end());
     double y_min = *std::min_element(y_values.begin(), y_values.end());
     double y_max = *std::max_element(y_values.begin(), y_values.end());
     
-    // Add some padding
+    // Add 10% padding to prevent data points from touching axes
     double x_range = x_max - x_min;
     double y_range = y_max - y_min;
     if (x_range == 0) x_range = 1;
@@ -107,7 +97,7 @@ cv::Mat Visualization::plotMetrics(
     y_min -= y_range * 0.1;
     y_max += y_range * 0.1;
     
-    // Convert data to plot coordinates
+    // Transform data from value space to pixel coordinates (y-axis inverted for display)
     std::vector<cv::Point2f> points;
     for (size_t i = 0; i < x_values.size(); ++i) {
         float px = margin + (x_values[i] - x_min) / (x_max - x_min) * (plot_w - 2*margin);
@@ -115,7 +105,6 @@ cv::Mat Visualization::plotMetrics(
         points.push_back(cv::Point2f(px, py));
     }
     
-    // Draw axes
     cv::line(plot_image, 
              cv::Point(margin, plot_h - margin), 
              cv::Point(plot_w - margin, plot_h - margin), 
@@ -125,7 +114,6 @@ cv::Mat Visualization::plotMetrics(
              cv::Point(margin, plot_h - margin), 
              cv::Scalar(0, 0, 0), 2);
     
-    // Draw grid lines
     int grid_lines = 5;
     for (int i = 1; i < grid_lines; ++i) {
         int x = margin + i * (plot_w - 2*margin) / grid_lines;
@@ -141,7 +129,6 @@ cv::Mat Visualization::plotMetrics(
                  cv::Scalar(230, 230, 230), 1);
     }
     
-    // Plot data points and lines
     for (size_t i = 0; i < points.size(); ++i) {
         cv::circle(plot_image, points[i], 5, cv::Scalar(0, 0, 255), -1);
         if (i > 0) {
@@ -149,22 +136,19 @@ cv::Mat Visualization::plotMetrics(
         }
     }
     
-    // Add title
     cv::putText(plot_image, title, 
                 cv::Point(plot_w/2 - title.length()*8, 30),
                 cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 0), 2);
     
-    // Add axis labels
     cv::putText(plot_image, x_label, 
                 cv::Point(plot_w/2 - x_label.length()*4, plot_h - 20),
                 cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 0, 0), 1);
     
-    // Y-axis label (rotated text approximation)
+    // Y-axis label (OpenCV doesn't support rotated text, so approximating with horizontal)
     cv::putText(plot_image, y_label, 
                 cv::Point(15, plot_h/2),
                 cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 0, 0), 1);
     
-    // Add axis values
     for (int i = 0; i <= grid_lines; ++i) {
         double x_val = x_min + i * (x_max - x_min) / grid_lines;
         double y_val = y_min + i * (y_max - y_min) / grid_lines;
@@ -203,14 +187,11 @@ cv::Mat Visualization::generateComparisonChart(
     int margin = 80;
     int bar_width = (chart_w - 2*margin) / (labels.size() * 2);
     
-    // Create white background
     cv::Mat chart_image(chart_h, chart_w, CV_8UC3, cv::Scalar(255, 255, 255));
     
-    // Find max value for scaling
     double max_val = *std::max_element(values.begin(), values.end());
     if (max_val == 0) max_val = 1;
     
-    // Draw axes
     cv::line(chart_image, 
              cv::Point(margin, chart_h - margin), 
              cv::Point(chart_w - margin, chart_h - margin), 
@@ -220,7 +201,6 @@ cv::Mat Visualization::generateComparisonChart(
              cv::Point(margin, chart_h - margin), 
              cv::Scalar(0, 0, 0), 2);
     
-    // Draw bars
     for (size_t i = 0; i < labels.size(); ++i) {
         int bar_height = static_cast<int>((values[i] / max_val) * (chart_h - 2*margin));
         int x_pos = margin + (i * 2 + 1) * bar_width;
@@ -230,18 +210,15 @@ cv::Mat Visualization::generateComparisonChart(
                      cv::Point(x_pos + bar_width/2, chart_h - margin),
                      cv::Scalar(100, 150, 200), -1);
         
-        // Draw bar outline
         cv::rectangle(chart_image,
                      cv::Point(x_pos - bar_width/2, chart_h - margin - bar_height),
                      cv::Point(x_pos + bar_width/2, chart_h - margin),
                      cv::Scalar(0, 0, 0), 2);
         
-        // Add labels
         cv::putText(chart_image, labels[i], 
                     cv::Point(x_pos - labels[i].length()*4, chart_h - margin + 25),
                     cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0), 1);
         
-        // Add value on top of bar
         std::stringstream val_str;
         val_str << std::fixed << std::setprecision(1) << values[i];
         cv::putText(chart_image, val_str.str(), 
@@ -249,12 +226,10 @@ cv::Mat Visualization::generateComparisonChart(
                     cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 0, 0), 1);
     }
     
-    // Add title
     cv::putText(chart_image, title, 
                 cv::Point(chart_w/2 - title.length()*8, 30),
                 cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 0, 0), 2);
     
-    // Add y-axis label
     cv::putText(chart_image, y_label, 
                 cv::Point(15, chart_h/2),
                 cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 0, 0), 1);
@@ -272,7 +247,6 @@ cv::Mat Visualization::drawHistogram(
     
     cv::Mat hist_image(hist_h + 60, hist_w, CV_8UC3, cv::Scalar(255, 255, 255));
     
-    // Draw title
     cv::putText(hist_image, title, 
                 cv::Point(hist_w/2 - title.length()*8, 25),
                 cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 0, 0), 2);
@@ -280,13 +254,12 @@ cv::Mat Visualization::drawHistogram(
     int bin_w = cvRound((double) hist_w / bin_count);
     int margin = 40;
     
-    // Normalize histogram
+    // Scale histogram values to fit in display area
     std::vector<int> normalized_hist(bin_count);
     for (int i = 0; i < bin_count; ++i) {
         normalized_hist[i] = cvRound((double)histogram[i] / max_value * (hist_h - margin));
     }
     
-    // Draw histogram bars
     for (int i = 0; i < bin_count; ++i) {
         cv::rectangle(hist_image,
                      cv::Point(i * bin_w, hist_h - normalized_hist[i] + margin),
@@ -299,7 +272,6 @@ cv::Mat Visualization::drawHistogram(
                      cv::Scalar(0, 0, 0), 1);
     }
     
-    // Draw axes
     cv::line(hist_image, 
              cv::Point(0, hist_h + margin), 
              cv::Point(hist_w, hist_h + margin), 
@@ -333,7 +305,6 @@ void Visualization::generateExperimentReport(
         return;
     }
     
-    // Parse CSV data
     std::string line;
     std::getline(file, line); // Skip header
     
@@ -360,7 +331,6 @@ void Visualization::generateExperimentReport(
         for (int i = 0; i < 2; ++i) std::getline(ss, temp, ',');
         ss >> detection_time;
         
-        // Collect data by experiment type
         if (experiment.find("detector") != std::string::npos) {
             if (detector == "orb") {
                 orb_times.push_back(detection_time);
@@ -384,7 +354,6 @@ void Visualization::generateExperimentReport(
     
     file.close();
     
-    // Generate visualizations
     std::cout << "Generating experiment visualizations...\n";
     
     // 1. Detector comparison chart

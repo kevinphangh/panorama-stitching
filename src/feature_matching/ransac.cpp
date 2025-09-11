@@ -69,13 +69,8 @@ RANSACResult RANSAC::findHomography(
             best_H = H.clone();
             best_mask = inlier_mask;
             
-            // Adaptive RANSAC: Update iteration count based on inlier ratio
-            // The formula calculates the minimum number of iterations needed to ensure
-            // with probability p that at least one sample set contains only inliers.
-            // N = log(1 - p) / log(1 - w^s), where:
-            // - p is the desired confidence (e.g., 0.995)
-            // - w is the inlier ratio
-            // - s is the sample size (4 for homography)
+            // Adaptive RANSAC: N = log(1-p) / log(1-w^4)
+            // Dynamically adjusts iterations based on inlier ratio to achieve confidence p
             w = static_cast<double>(best_inliers) / n_points;
             if (w > 0.0 && w < 1.0) {
                 double new_iterations = std::log(1 - p) / std::log(1 - std::pow(w, 4));
@@ -122,24 +117,21 @@ cv::Mat RANSAC::computeHomographyMinimal(const std::vector<cv::Point2f>& pts1,
         return cv::Mat();
     }
     
-    // Use OpenCV's findHomography with method=0 (regular least squares)
-    // for the minimal 4-point case. This ensures consistency with the
-    // refinement step and leverages OpenCV's optimized implementation.
+    // method=0 uses least squares for 4-point homography estimation
     cv::Mat H = cv::findHomography(pts1, pts2, 0);
     
     if (H.empty()) {
         return cv::Mat();
     }
     
-    // Validate the homography
     double det = cv::determinant(H);
     
-    // Check for degenerate homography
+    // Reject if determinant near zero (degenerate transformation)
     if (std::abs(det) < PanoramaConfig::HOMOGRAPHY_EPSILON) {
         return cv::Mat();
     }
     
-    // Check for numerical issues (NaN or Inf)
+    // Reject if any element is NaN or Inf
     for (int i = 0; i < H.rows; i++) {
         for (int j = 0; j < H.cols; j++) {
             double val = H.at<double>(i, j);

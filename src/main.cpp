@@ -33,15 +33,13 @@ void printUsage(const char* program_name) {
               << "  --help                       : Show this message\n";
 }
 
-// Validate output path for security (prevent path traversal)
+// Validates output path to prevent writing to sensitive system locations
 bool isValidOutputPath(const std::string& path) {
-    // Check for path traversal attempts
     if (path.find("..") != std::string::npos) {
         std::cerr << "Error: Path traversal detected in output path\n";
         return false;
     }
     
-    // Check for absolute paths to system directories
     if (path[0] == '/' && 
         (path.find("/etc") == 0 || 
          path.find("/usr") == 0 || 
@@ -68,7 +66,6 @@ bool parseArgument(const std::string& arg, T& value, const std::string& param_na
         return false;
     }
     
-    // Check for extra characters
     std::string remainder;
     if (iss >> remainder) {
         std::cerr << "Error: Invalid " << param_name << " value: '" << arg << "' (extra characters)\n";
@@ -127,7 +124,6 @@ int calculateAdaptiveFeatures(int image_pixels, int max_features) {
     return max_features;
 }
 
-// Forward declarations
 cv::Mat performStitchingDirect(
     const cv::Mat& img1,
     const cv::Mat& img2,
@@ -157,7 +153,6 @@ cv::Mat performStitching(
     int max_features = 2000,
     bool visualize = false
 ) {
-    // Load images
     cv::Mat img1 = cv::imread(img1_path);
     cv::Mat img2 = cv::imread(img2_path);
     
@@ -249,7 +244,6 @@ cv::Mat performStitchingDirect(
     detector1->setMaxFeatures(adaptive_features1);
     detector2->setMaxFeatures(adaptive_features2);
     
-    // Detect features
     std::cout << "Detecting features...\n";
     auto result1 = detector1->detect(img1);
     auto result2 = detector2->detect(img2);
@@ -257,7 +251,6 @@ cv::Mat performStitchingDirect(
     std::cout << "Detected " << result1.getKeypointCount() << " and " 
               << result2.getKeypointCount() << " keypoints\n";
     
-    // Match features
     std::cout << "Matching features...\n";
     FeatureMatcher matcher;
     auto match_result = matcher.matchFeatures(
@@ -267,7 +260,6 @@ cv::Mat performStitchingDirect(
     
     std::cout << "Found " << match_result.num_good_matches << " good matches\n";
     
-    // Estimate homography
     std::cout << "Estimating homography...\n";
     HomographyEstimator h_estimator;
     h_estimator.setRANSACThreshold(ransac_threshold);
@@ -358,7 +350,6 @@ cv::Mat performStitchingDirect(
         }
     }
     
-    // Warp images
     std::cout << "Warping images...\n";
     ImageWarper warper;
     
@@ -453,7 +444,6 @@ cv::Mat performStitchingDirect(
     cv::warpPerspective(cv::Mat::ones(img2.size(), CV_8UC1) * 255, 
                        warped_mask2, translation * H_inv, panorama_size);
     
-    // Blend images
     std::cout << "Blending images...\n";
     Blender blender;
     

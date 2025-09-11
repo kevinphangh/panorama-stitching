@@ -17,17 +17,15 @@
 #                                                                             #
 ###############################################################################
 
-set -e  # Exit on error
+set -e
 
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 MAGENTA='\033[0;35m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Function to print colored headers
 print_header() {
     echo ""
     echo -e "${BLUE}========================================${NC}"
@@ -35,7 +33,6 @@ print_header() {
     echo -e "${BLUE}========================================${NC}"
 }
 
-# Function to print status
 print_status() {
     echo -e "${GREEN}✓${NC} $1"
 }

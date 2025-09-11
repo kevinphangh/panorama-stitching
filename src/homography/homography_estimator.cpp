@@ -21,7 +21,7 @@ cv::Mat HomographyEstimator::estimateHomography(
         return cv::Mat();
     }
     
-    // Extract points ensuring both arrays stay synchronized
+    // Extract matched point pairs, ensuring arrays stay synchronized
     std::vector<cv::Point2f> points1, points2;
     points1.reserve(matches.size());
     points2.reserve(matches.size());
@@ -44,7 +44,7 @@ cv::Mat HomographyEstimator::estimateHomography(
                                          reprojection_threshold,
                                          ransac_confidence_);
     
-    // Extract inlier matches (need to map back to original matches)
+    // Map RANSAC inlier mask back to original match indices
     inlier_matches.clear();
     size_t valid_idx = 0;
     for (size_t i = 0; i < matches.size(); i++) {
@@ -66,7 +66,7 @@ cv::Rect HomographyEstimator::calculateOutputBounds(
     const cv::Mat& img2,
     const cv::Mat& H) {
     
-    // Transform corners of img2
+    // Calculate bounding box to contain both original and transformed images
     std::vector<cv::Point2f> corners2(4);
     corners2[0] = cv::Point2f(0, 0);
     corners2[1] = cv::Point2f(static_cast<float>(img2.cols), 0);
@@ -76,7 +76,6 @@ cv::Rect HomographyEstimator::calculateOutputBounds(
     std::vector<cv::Point2f> corners2_transformed;
     cv::perspectiveTransform(corners2, corners2_transformed, H);
     
-    // Combine with img1 corners
     std::vector<cv::Point2f> all_corners;
     all_corners.push_back(cv::Point2f(0, 0));
     all_corners.push_back(cv::Point2f(static_cast<float>(img1.cols), 0));
@@ -84,7 +83,6 @@ cv::Rect HomographyEstimator::calculateOutputBounds(
     all_corners.push_back(cv::Point2f(0, static_cast<float>(img1.rows)));
     all_corners.insert(all_corners.end(), corners2_transformed.begin(), corners2_transformed.end());
     
-    // Find bounding box
     float min_x = 0;  // Start from 0 to ensure first image is included
     float max_x = static_cast<float>(img1.cols);
     float min_y = 0;
@@ -97,12 +95,11 @@ cv::Rect HomographyEstimator::calculateOutputBounds(
         max_y = std::max(max_y, pt.y);
     }
     
-    // Add padding and ensure positive dimensions
     int padding = PanoramaConfig::PANORAMA_PADDING;
     int width = static_cast<int>(std::ceil(max_x - min_x)) + padding * 2;
     int height = static_cast<int>(std::ceil(max_y - min_y)) + padding * 2;
     
-    // Limit maximum size (using same limit as main.cpp for consistency)
+    // Cap dimensions to MAX_PANORAMA_DIMENSION for memory safety
     width = std::min(width, PanoramaConfig::MAX_PANORAMA_DIMENSION);
     height = std::min(height, PanoramaConfig::MAX_PANORAMA_DIMENSION);
     

@@ -38,6 +38,8 @@ struct ExperimentResult {
     int ransac_iterations;
     
     // Stitching metrics
+    double warping_time_ms;
+    double blending_time_ms;
     double total_time_ms;
     
     cv::Mat panorama;
