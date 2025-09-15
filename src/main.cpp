@@ -33,8 +33,8 @@ void printUsage(const char* program_name) {
               << "  --help                       : Show this message\n";
 }
 
-// Validates output path to prevent writing to sensitive system locations
 bool isValidOutputPath(const std::string& path) {
+    // Security: prevent path traversal and writing to system directories
     if (path.find("..") != std::string::npos) {
         std::cerr << "Error: Path traversal detected in output path\n";
         return false;
@@ -55,7 +55,6 @@ bool isValidOutputPath(const std::string& path) {
     return true;
 }
 
-// Safe command-line argument parsing with exception handling
 template<typename T>
 bool parseArgument(const std::string& arg, T& value, const std::string& param_name) {
     std::istringstream iss(arg);
@@ -76,7 +75,6 @@ bool parseArgument(const std::string& arg, T& value, const std::string& param_na
     return true;
 }
 
-// Specialized version for double with range checking
 bool parseDouble(const std::string& arg, double& value, const std::string& param_name,
                 double min_val = std::numeric_limits<double>::lowest(),
                 double max_val = std::numeric_limits<double>::max()) {
@@ -93,7 +91,6 @@ bool parseDouble(const std::string& arg, double& value, const std::string& param
     return true;
 }
 
-// Specialized version for int with range checking
 bool parseInt(const std::string& arg, int& value, const std::string& param_name,
              int min_val = std::numeric_limits<int>::min(),
              int max_val = std::numeric_limits<int>::max()) {
@@ -110,11 +107,9 @@ bool parseInt(const std::string& arg, int& value, const std::string& param_name,
     return true;
 }
 
-// Helper function to calculate adaptive features based on image size
 int calculateAdaptiveFeatures(int image_pixels, int max_features) {
     int base_pixels = PanoramaConfig::REFERENCE_IMAGE_HEIGHT * PanoramaConfig::REFERENCE_IMAGE_WIDTH;
     
-    // Scale up features for larger images (panoramas)
     if (image_pixels > base_pixels * PanoramaConfig::PANORAMA_SCALE_THRESHOLD) {
         int adaptive_features = static_cast<int>(max_features * std::sqrt(static_cast<double>(image_pixels) / base_pixels));
         std::cout << "Scaling features for large image: " << adaptive_features << " (from " << max_features << ")\n";
@@ -165,7 +160,6 @@ cv::Mat performStitching(
                                   ransac_threshold, max_features, visualize, PanoramaConfig::MAX_PANORAMA_DIMENSION);
 }
 
-// Direct stitching function that works with cv::Mat to avoid JPEG compression
 cv::Mat performStitchingDirect(
     const cv::Mat& img1,
     const cv::Mat& img2,
@@ -177,7 +171,6 @@ cv::Mat performStitchingDirect(
     int max_panorama_dimension
 ) {
     
-    // Comprehensive input validation
     if (img1.empty() || img2.empty()) {
         std::cerr << "Error: One or both input images are empty\n";
         return cv::Mat();
@@ -206,7 +199,6 @@ cv::Mat performStitchingDirect(
     
     std::cout << "Loaded images: " << img1.size() << " and " << img2.size() << "\n";
     
-    // Check for excessive memory usage
     size_t total_pixels = static_cast<size_t>(img1.rows) * img1.cols + 
                          static_cast<size_t>(img2.rows) * img2.cols;
     if (total_pixels > PanoramaConfig::MAX_IMAGE_PIXELS) {
@@ -218,15 +210,13 @@ cv::Mat performStitchingDirect(
         std::cerr << "Warning: Large image size detected. Processing may be slow.\n";
     }
     
-    // Adaptively scale max_features based on image size
-    // Larger images (panoramas) need more features for good matching
     int img1_pixels = img1.rows * img1.cols;
     int img2_pixels = img2.rows * img2.cols;
     
+    // Larger panoramas need proportionally more features for robust matching
     int adaptive_features1 = calculateAdaptiveFeatures(img1_pixels, max_features);
     int adaptive_features2 = calculateAdaptiveFeatures(img2_pixels, max_features);
     
-    // Create feature detectors with adaptive feature counts
     std::unique_ptr<FeatureDetector> detector1;
     std::unique_ptr<FeatureDetector> detector2;
     
@@ -279,7 +269,6 @@ cv::Mat performStitchingDirect(
         return cv::Mat();
     }
     
-    // Check for NaN or Inf values in homography
     for (int i = 0; i < homography.rows; i++) {
         for (int j = 0; j < homography.cols; j++) {
             double val = homography.at<double>(i, j);
@@ -290,7 +279,6 @@ cv::Mat performStitchingDirect(
         }
     }
     
-    // Validate homography quality
     double det = cv::determinant(homography);
     if (std::abs(det) < PanoramaConfig::MIN_HOMOGRAPHY_DETERMINANT || std::abs(det) > PanoramaConfig::MAX_HOMOGRAPHY_DETERMINANT) {
         std::cerr << "Error: Homography determinant out of reasonable range: " << det << std::endl;
@@ -301,12 +289,15 @@ cv::Mat performStitchingDirect(
         return cv::Mat();
     }
     
-    // Additional validation: check if homography would create extreme transformation
     cv::Mat H_normalized = homography.clone();
-    H_normalized /= H_normalized.at<double>(2, 2);
-    
-    // Check for extreme scaling or shearing
-    double scale_x = std::sqrt(H_normalized.at<double>(0,0) * H_normalized.at<double>(0,0) + 
+    double h22 = H_normalized.at<double>(2, 2);
+    if (std::abs(h22) < 1e-10) {
+        std::cerr << "Error: Homography matrix is singular (H[2,2] = " << h22 << ")\n";
+        return cv::Mat();
+    }
+    H_normalized /= h22;
+
+    double scale_x = std::sqrt(H_normalized.at<double>(0,0) * H_normalized.at<double>(0,0) +
                                H_normalized.at<double>(1,0) * H_normalized.at<double>(1,0));
     double scale_y = std::sqrt(H_normalized.at<double>(0,1) * H_normalized.at<double>(0,1) + 
                                H_normalized.at<double>(1,1) * H_normalized.at<double>(1,1));
@@ -318,14 +309,12 @@ cv::Mat performStitchingDirect(
         return cv::Mat();
     }
     
-    // Check for minimum number of inliers
     if (ransac_result.num_inliers < PanoramaConfig::MIN_INLIERS_REQUIRED) {
         std::cerr << "Error: Too few inliers (" << ransac_result.num_inliers << ") for reliable stitching\n";
         std::cerr << "Minimum " << PanoramaConfig::MIN_INLIERS_REQUIRED << " inliers required for stable homography\n";
         return cv::Mat();
     }
     
-    // Visualize matches if requested
     if (visualize) {
         cv::Mat match_img = matcher.visualizeMatches(
             img1, img2, result1.keypoints, result2.keypoints, inlier_matches
@@ -333,7 +322,6 @@ cv::Mat performStitchingDirect(
         cv::imshow("Inlier Matches", match_img);
         cv::waitKey(0);
         
-        // Generate and save match distance histogram
         if (!match_result.match_distances.empty()) {
             cv::Mat histogram = Visualization::generateMatchDistanceHistogram(
                 match_result.match_distances,
@@ -353,8 +341,7 @@ cv::Mat performStitchingDirect(
     std::cout << "Warping images...\n";
     ImageWarper warper;
     
-    // Calculate proper bounds with translation
-    // Note: homography maps img1 -> img2, but we need img2 -> img1 for warping
+    // CRITICAL: homography maps img1 -> img2, but we need img2 -> img1 for warping
     cv::Mat H_inv;
     try {
         H_inv = homography.inv();
@@ -383,7 +370,6 @@ cv::Mat performStitchingDirect(
         max_y = std::max(max_y, pt.y);
     }
     
-    // Create translation matrix to shift everything to positive coordinates
     cv::Mat translation = (cv::Mat_<double>(3, 3) << 
         1, 0, -min_x,
         0, 1, -min_y,
@@ -395,13 +381,11 @@ cv::Mat performStitchingDirect(
         static_cast<int>(max_y - min_y) + PanoramaConfig::PANORAMA_PADDING * 2
     );
     
-    // Limit extreme transformations - if bounds are too large, likely bad homography
     if (panorama_size.width <= 0 || panorama_size.height <= 0) {
         std::cerr << "Invalid panorama size (negative)" << std::endl;
         return cv::Mat();
     }
     
-    // Check if transformation would create unreasonably large panorama
     if (panorama_size.width > max_panorama_dimension || panorama_size.height > max_panorama_dimension) {
         std::cerr << "Error: Panorama size would be " << panorama_size.width 
                   << "x" << panorama_size.height << " pixels (max: " << max_panorama_dimension << ")\n";
@@ -416,7 +400,6 @@ cv::Mat performStitchingDirect(
         return cv::Mat();
     }
     
-    // Check estimated memory usage
     size_t estimated_bytes = static_cast<size_t>(panorama_size.width) * panorama_size.height * 3 * 2;  // x2 for processing overhead
     if (estimated_bytes > PanoramaConfig::MAX_PANORAMA_MEMORY) {
         std::cerr << "Error: Panorama would require approximately " 
@@ -426,12 +409,10 @@ cv::Mat performStitchingDirect(
         return cv::Mat();
     }
     
-    // Create output panorama
     cv::Mat panorama = cv::Mat::zeros(panorama_size, img1.type());
     cv::Mat mask1 = cv::Mat::zeros(panorama_size, CV_8UC1);
     cv::Mat mask2 = cv::Mat::zeros(panorama_size, CV_8UC1);
     
-    // Warp first image with translation
     cv::Mat warped1;
     cv::warpPerspective(img1, warped1, translation, panorama_size);
     cv::warpPerspective(cv::Mat::ones(img1.size(), CV_8UC1) * 255, 
@@ -462,7 +443,6 @@ cv::Mat performStitchingDirect(
     return panorama;
 }
 
-// Sequential stitching function - extracted to eliminate goto statements
 cv::Mat performSequentialStitching(
     const std::vector<cv::Mat>& images,
     const std::string& detector_type,
@@ -478,14 +458,11 @@ cv::Mat performSequentialStitching(
         return cv::Mat();
     }
     
-    // Start with the first image as the base panorama
     cv::Mat panorama = images[0].clone();
     
-    // Sequentially stitch each image to the accumulated panorama
     for (size_t i = 1; i < images.size(); i++) {
         std::cout << "\n=== Stitching image " << (i + 1) << " of " << images.size() << " ===\n";
         
-        // Use direct stitching to avoid JPEG compression artifacts
         cv::Mat result = performStitchingDirect(
             panorama, images[i],
             detector_type, blend_mode,
@@ -530,7 +507,6 @@ int main(int argc, char** argv) {
         std::string img1_path = argv[2];
         std::string img2_path = argv[3];
         
-        // Parse optional parameters
         std::string detector_type = "orb";
         std::string blend_mode = "feather";
         double ransac_threshold = PanoramaConfig::DEFAULT_RANSAC_THRESHOLD;
@@ -589,7 +565,7 @@ int main(int argc, char** argv) {
         std::vector<std::string> image_paths;
         for (int i = 2; i < argc; i++) {
             if (argv[i][0] == '-') {
-                break;  // Stop collecting paths when we hit the next option
+                break;
             }
             image_paths.push_back(argv[i]);
         }
@@ -599,7 +575,6 @@ int main(int argc, char** argv) {
             return 1;
         }
         
-        // Parse optional parameters
         std::string detector_type = "orb";
         std::string blend_mode = "feather";
         double ransac_threshold = PanoramaConfig::DEFAULT_RANSAC_THRESHOLD;
@@ -607,7 +582,6 @@ int main(int argc, char** argv) {
         std::string output_path = "multi_panorama.jpg";
         bool visualize = false;
         
-        // Find where options start (after image paths)
         int option_start = 2 + image_paths.size();
         for (int i = option_start; i < argc; i++) {
             std::string arg = argv[i];
@@ -634,7 +608,6 @@ int main(int argc, char** argv) {
         
         std::cout << "Multi-image stitching with " << image_paths.size() << " images\n";
         
-        // Load all images
         std::vector<cv::Mat> images;
         for (const auto& path : image_paths) {
             cv::Mat img = cv::imread(path);
@@ -646,25 +619,24 @@ int main(int argc, char** argv) {
             std::cout << "Loaded: " << path << " [" << img.size() << "]\n";
         }
         
-        // For 3 images, try reference-based stitching first
         cv::Mat panorama;
         bool use_sequential = false;
         
         if (images.size() == 3) {
             std::cout << "\n=== Attempting reference-based stitching (img2 as center) ===\n";
             
-            // First stitch img1 to img2 (left side)
             std::cout << "\n--- Stitching img1 to img2 (left side) ---\n";
+            // Use center image as reference, stitch left image to it
             cv::Mat left_stitch = performStitchingDirect(
-                images[1], images[0],  // img2, img1 - note reversed order
+                images[1], images[0],  // img2, img1 - reversed for left-to-center
                 detector_type, blend_mode,
                 ransac_threshold, max_features,
                 visualize, PanoramaConfig::MAX_PANORAMA_DIMENSION
             );
             
             if (!left_stitch.empty()) {
-                // Then stitch img3 to the result (right side)
                 std::cout << "\n--- Stitching img3 to panorama (right side) ---\n";
+                // Add right image to the accumulated panorama
                 panorama = performStitchingDirect(
                     left_stitch, images[2],  // left_stitch, img3
                     detector_type, blend_mode,
@@ -684,7 +656,6 @@ int main(int argc, char** argv) {
             use_sequential = true;
         }
         
-        // Use sequential stitching if reference-based failed or for non-3 image cases
         if (use_sequential) {
             panorama = performSequentialStitching(
                 images, detector_type, blend_mode,
@@ -697,7 +668,6 @@ int main(int argc, char** argv) {
             }
         }
         
-        // Save the final panorama
         if (!output_path.empty()) {
             if (!isValidOutputPath(output_path)) {
                 std::cerr << "Error: Invalid output path specified\n";

@@ -68,8 +68,6 @@ public:
     
 private:
     std::vector<ExperimentResult> results_;
-    std::map<std::string, std::vector<double>> metrics_by_detector_;
-    std::map<double, std::vector<double>> metrics_by_threshold_;
     
     void loadDatasets(const std::string& dataset_dir,
                      std::vector<std::pair<std::string, std::string>>& image_pairs);

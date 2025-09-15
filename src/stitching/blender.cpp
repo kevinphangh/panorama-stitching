@@ -28,7 +28,6 @@ cv::Mat Blender::simpleOverlay(const cv::Mat& img1, const cv::Mat& img2,
     
     cv::Mat result = img1.clone();
     
-    // Use OpenCV's optimized copyTo instead of pixel-by-pixel iteration
     img2.copyTo(result, mask2);
     
     return result;
@@ -51,14 +50,12 @@ cv::Mat Blender::featherBlend(const cv::Mat& img1, const cv::Mat& img2,
         cv::distanceTransform(mask1, dist1, cv::DIST_L2, 3);
         cv::distanceTransform(mask2, dist2, cv::DIST_L2, 3);
         
-        // Normalize distance values to [0,1] range within feather radius
         dist1 = cv::min(dist1, static_cast<double>(feather_radius)) / feather_radius;
         dist2 = cv::min(dist2, static_cast<double>(feather_radius)) / feather_radius;
         
         dist1.convertTo(weight1, CV_32F);
         dist2.convertTo(weight2, CV_32F);
     } else {
-        // Binary weights from masks (no gradient)
         mask1.convertTo(weight1, CV_32F, 1.0/255.0);
         mask2.convertTo(weight2, CV_32F, 1.0/255.0);
     }
@@ -67,7 +64,9 @@ cv::Mat Blender::featherBlend(const cv::Mat& img1, const cv::Mat& img2,
     cv::bitwise_and(mask1, mask2, overlap);
     
     cv::Mat weight_sum = weight1 + weight2;
-    weight_sum += (weight_sum == 0);  // Prevent division by zero
+    cv::Mat zero_mask = (weight_sum == 0);
+    zero_mask.convertTo(zero_mask, CV_32F, 1.0/255.0);
+    weight_sum += zero_mask;  // Prevent division by zero
     
     cv::Mat img1_float, img2_float;
     img1.convertTo(img1_float, CV_32FC3);
@@ -94,10 +93,7 @@ cv::Mat Blender::featherBlend(const cv::Mat& img1, const cv::Mat& img2,
 cv::Mat Blender::multibandBlend(const cv::Mat& img1, const cv::Mat& img2,
                                const cv::Mat& mask1, const cv::Mat& mask2,
                                int num_bands) {
-    // Multiband blending using Laplacian pyramids
-    // This technique blends different frequency bands separately to achieve smooth transitions
-    // while preserving fine details. High frequencies (edges, details) are blended with sharp
-    // transitions, while low frequencies (colors, gradients) are blended smoothly.
+    // Laplacian pyramid blending: low frequencies blend smoothly, high frequencies preserve details
     //
     // Algorithm:
     // 1. Build Laplacian pyramids for both images (frequency decomposition)
@@ -134,7 +130,9 @@ cv::Mat Blender::multibandBlend(const cv::Mat& img1, const cv::Mat& img2,
         
         // Normalize mask weights to sum to 1.0
         cv::Mat mask_sum = mask1_float + mask2_float;
-        mask_sum += (mask_sum == 0);
+        cv::Mat zero_mask = (mask_sum == 0);
+        zero_mask.convertTo(zero_mask, CV_32F, 1.0/255.0);
+        mask_sum += zero_mask;  // Prevent division by zero
         mask1_float = mask1_float / mask_sum;
         mask2_float = mask2_float / mask_sum;
         

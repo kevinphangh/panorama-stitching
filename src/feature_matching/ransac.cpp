@@ -69,12 +69,11 @@ RANSACResult RANSAC::findHomography(
             best_H = H.clone();
             best_mask = inlier_mask;
             
-            // Adaptive RANSAC: N = log(1-p) / log(1-w^4)
-            // Dynamically adjusts iterations based on inlier ratio to achieve confidence p
+            // Adaptive RANSAC: reduces iterations when inlier ratio is high
             w = static_cast<double>(best_inliers) / n_points;
             if (w > 0.0 && w < 1.0) {
                 double new_iterations = std::log(1 - p) / std::log(1 - std::pow(w, 4));
-                max_iterations = std::min(static_cast<int>(new_iterations) + 1, max_iterations_);
+                max_iterations_ = std::min(static_cast<int>(new_iterations) + 1, max_iterations_);
             }
         }
         
@@ -117,7 +116,7 @@ cv::Mat RANSAC::computeHomographyMinimal(const std::vector<cv::Point2f>& pts1,
         return cv::Mat();
     }
     
-    // method=0 uses least squares for 4-point homography estimation
+    // method=0: least squares for minimal 4-point set
     cv::Mat H = cv::findHomography(pts1, pts2, 0);
     
     if (H.empty()) {
@@ -126,12 +125,10 @@ cv::Mat RANSAC::computeHomographyMinimal(const std::vector<cv::Point2f>& pts1,
     
     double det = cv::determinant(H);
     
-    // Reject if determinant near zero (degenerate transformation)
     if (std::abs(det) < PanoramaConfig::HOMOGRAPHY_EPSILON) {
         return cv::Mat();
     }
     
-    // Reject if any element is NaN or Inf
     for (int i = 0; i < H.rows; i++) {
         for (int j = 0; j < H.cols; j++) {
             double val = H.at<double>(i, j);
@@ -153,14 +150,21 @@ std::vector<bool> RANSAC::findInliers(const cv::Mat& H,
     for (size_t i = 0; i < pts1.size(); i++) {
         cv::Mat pt1 = (cv::Mat_<double>(3, 1) << pts1[i].x, pts1[i].y, 1.0);
         cv::Mat pt2_est = H * pt1;
-        
-        double x = pt2_est.at<double>(0) / pt2_est.at<double>(2);
-        double y = pt2_est.at<double>(1) / pt2_est.at<double>(2);
-        
+
+        double w = pt2_est.at<double>(2);
+        if (std::abs(w) < 1e-10) {
+            // Point at infinity, mark as outlier
+            mask[i] = false;
+            continue;
+        }
+
+        double x = pt2_est.at<double>(0) / w;
+        double y = pt2_est.at<double>(1) / w;
+
         double dx = x - pts2[i].x;
         double dy = y - pts2[i].y;
         double error = std::sqrt(dx*dx + dy*dy);
-        
+
         if (error < threshold) {
             mask[i] = true;
         }
@@ -185,14 +189,20 @@ double RANSAC::computeReprojectionError(
         
         cv::Mat pt1 = (cv::Mat_<double>(3, 1) << points1[i].x, points1[i].y, 1.0);
         cv::Mat pt2_est = homography * pt1;
-        
-        double x = pt2_est.at<double>(0) / pt2_est.at<double>(2);
-        double y = pt2_est.at<double>(1) / pt2_est.at<double>(2);
-        
+
+        double w = pt2_est.at<double>(2);
+        if (std::abs(w) < 1e-10) {
+            // Skip points at infinity
+            continue;
+        }
+
+        double x = pt2_est.at<double>(0) / w;
+        double y = pt2_est.at<double>(1) / w;
+
         double dx = x - points2[i].x;
         double dy = y - points2[i].y;
         double error = std::sqrt(dx*dx + dy*dy);
-        
+
         total_error += error;
         count++;
     }

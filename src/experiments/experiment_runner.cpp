@@ -21,21 +21,18 @@ ExperimentRunner::ExperimentRunner() {
 void ExperimentRunner::runAllExperiments() {
     std::cout << "Starting experimental evaluation...\n";
     
-    // Check for datasets
     std::string dataset_dir = "datasets/";
     if (!fs::exists(dataset_dir)) {
         std::cerr << "Dataset directory not found. Please add images to " << dataset_dir << "\n";
         return;
     }
     
-    // Run different experiment types
     runFeatureDetectorComparison(dataset_dir);
     runRANSACThresholdExperiment(dataset_dir);
     runBlendingComparison(dataset_dir);
     
     std::cout << "Experiments completed. " << results_.size() << " results collected.\n";
     
-    // Export metrics and generate visualizations
     exportMetricsToCSV("results/metrics.csv");
     exportMatchDistances("results");
     generateVisualizations("results");
@@ -67,10 +64,6 @@ void ExperimentRunner::runFeatureDetectorComparison(const std::string& dataset_p
             std::cout << "Testing " << detector << " on " << img1_path << "\n";
             auto result = runSingleExperiment(img1_path, img2_path, config);
             results_.push_back(result);
-            
-            // Store metrics for analysis
-            metrics_by_detector_[detector].push_back(result.num_inliers);
-            metrics_by_detector_[detector].push_back(result.detection_time_ms);
         }
     }
 }
@@ -98,9 +91,6 @@ void ExperimentRunner::runRANSACThresholdExperiment(const std::string& dataset_p
             std::cout << "Testing RANSAC threshold " << threshold << "\n";
             auto result = runSingleExperiment(img1_path, img2_path, config);
             results_.push_back(result);
-            
-            metrics_by_threshold_[threshold].push_back(result.inlier_ratio);
-            metrics_by_threshold_[threshold].push_back(result.reprojection_error);
         }
     }
 }
@@ -316,7 +306,11 @@ void ExperimentRunner::saveResults(const std::string& output_dir) {
 
 void ExperimentRunner::exportMetricsToCSV(const std::string& csv_path) {
     std::ofstream file(csv_path);
-    
+    if (!file.is_open()) {
+        std::cerr << "Error: Cannot open file for writing: " << csv_path << "\n";
+        return;
+    }
+
     file << "experiment,detector,ransac_threshold,blend_mode,";
     file << "num_keypoints_1,num_keypoints_2,num_matches,num_inliers,";
     file << "inlier_ratio,reprojection_error,";
@@ -414,7 +408,11 @@ void ExperimentRunner::exportMatchDistances(const std::string& output_dir) {
         if (!distances.empty()) {
             std::string filename = output_dir + "/" + detector + "_match_distances.csv";
             std::ofstream file(filename);
-            
+            if (!file.is_open()) {
+                std::cerr << "Error: Cannot open file for writing: " << filename << "\n";
+                continue;
+            }
+
             file << "distance\n";
             for (double dist : distances) {
                 file << dist << "\n";

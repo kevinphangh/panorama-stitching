@@ -28,8 +28,7 @@ MatchingResult FeatureMatcher::matchFeatures(
     
     MatchingResult result;
     result.ratio_test_threshold = ratio_threshold;
-    
-    // Input validation
+
     if (descriptors1.empty() || descriptors2.empty()) {
         std::cerr << "Error: Empty descriptors provided to matcher\n";
         return result;
@@ -82,9 +81,6 @@ std::vector<cv::DMatch> FeatureMatcher::ratioTest(
             if (match_pair[0].distance < ratio_threshold * match_pair[1].distance) {
                 good_matches.push_back(match_pair[0]);
             }
-        } else if (match_pair.size() == 1) {
-            // Single match with no second-best to compare - include it
-            good_matches.push_back(match_pair[0]);
         }
     }
     
