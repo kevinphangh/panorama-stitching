@@ -18,138 +18,173 @@ plt.rcParams['figure.figsize'] = (10, 6)
 plt.rcParams['font.size'] = 10
 
 def load_metrics(csv_path="results/metrics.csv"):
-    """Load metrics from CSV file"""
+    """Load metrics from CSV file - REAL DATA ONLY"""
     if not os.path.exists(csv_path):
         print(f"Warning: Metrics file not found at {csv_path}")
         return None
-    
-    df = pd.read_csv(csv_path)
+
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception as e:
+        print(f"Error reading CSV file: {e}")
+        return None
+
     print(f"Loaded {len(df)} experiment results from {csv_path}")
-    
+
+    # Validate required columns exist
+    required_cols = ['experiment', 'status']
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        print(f"Warning: Missing required columns: {missing_cols}")
+
     # Parse experiment details from experiment column if needed
     if 'experiment' in df.columns:
         df['scene'] = df['experiment'].str.extract(r'(\w+_scene\d?)', expand=False)
         df['image_pair'] = df['experiment'].str.extract(r'pair\(([\d-]+)\)', expand=False)
-    
-    # Ensure numeric columns - handle both old and new formats
-    numeric_cols = ['num_keypoints_1', 'num_keypoints_2', 'num_matches', 'num_inliers',
-                   'inlier_ratio', 'reprojection_error', 'detection_time', 'matching_time',
-                   'homography_time', 'warping_time', 'blending_time', 'total_time']
-    
-    # Check if we have old format and map columns
-    if 'keypoints' in df.columns:
-        df['num_keypoints_1'] = df['keypoints']
-        df['num_keypoints_2'] = df['keypoints']
-        df['num_matches'] = df['matches']
-        df['num_inliers'] = df['inliers']
-        
-        # For timing, use single processing_time_ms if available
-        if 'processing_time_ms' in df.columns:
-            df['total_time'] = df['processing_time_ms']
-            # Estimate component times (rough percentages)
-            df['detection_time'] = df['processing_time_ms'] * 0.4
-            df['matching_time'] = df['processing_time_ms'] * 0.15
-            df['homography_time'] = df['processing_time_ms'] * 0.1
-            df['warping_time'] = df['processing_time_ms'] * 0.2
-            df['blending_time'] = df['processing_time_ms'] * 0.15
-    
+
+    # Map to consistent column names for analysis
+    if 'keypoints1' in df.columns and 'keypoints2' in df.columns:
+        df['num_keypoints_1'] = df['keypoints1']
+        df['num_keypoints_2'] = df['keypoints2']
+        df['num_matches'] = df['matches'] if 'matches' in df.columns else 0
+        df['num_inliers'] = df['inliers'] if 'inliers' in df.columns else 0
+
+    # Only process columns that actually exist with real data
+    numeric_cols = ['num_keypoints_1', 'num_keypoints_2', 'num_matches', 'num_inliers', 'inlier_ratio']
     for col in numeric_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
-    
+            # Validate data ranges
+            if col == 'inlier_ratio':
+                invalid_mask = ((df[col] < 0) | (df[col] > 100)) & df[col].notna()
+                if invalid_mask.any():
+                    print(f"Warning: Invalid {col} values detected (outside 0-100 range)")
+                    df.loc[invalid_mask, col] = np.nan
+            elif col in ['num_keypoints_1', 'num_keypoints_2', 'num_matches', 'num_inliers']:
+                invalid_mask = (df[col] < 0) & df[col].notna()
+                if invalid_mask.any():
+                    print(f"Warning: Negative {col} values detected, setting to 0")
+                    df.loc[invalid_mask, col] = 0
+
+    # Report data quality
+    print(f"Data quality check:")
+    print(f"  - Successful experiments: {len(df[df['status'] == 'SUCCESS'])}")
+    print(f"  - Failed experiments: {len(df[df['status'] == 'FAILED'])}")
+    if 'num_inliers' in df.columns:
+        print(f"  - Experiments with valid inlier data: {df['num_inliers'].notna().sum()}")
+
     return df
 
-def create_timing_analysis(df, output_dir):
-    """Create detailed timing analysis charts"""
+def create_metrics_analysis(df, output_dir):
+    """Create analysis charts for REAL metrics only"""
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     axes = axes.flatten()
-    
-    # Check which timing columns are available
-    timing_cols = ['detection_time', 'matching_time', 'homography_time', 
-                  'warping_time', 'blending_time']
-    available_cols = [col for col in timing_cols if col in df.columns and df[col].notna().any()]
-    
-    # If no detailed timing, check for total_time or processing_time_ms
-    if not available_cols and 'total_time' in df.columns and df['total_time'].notna().any():
-        # Create estimated breakdown for visualization
-        available_cols = ['detection_time', 'matching_time', 'homography_time', 'warping_time', 'blending_time']
-    
-    if not available_cols:
-        print("No timing data available")
+
+    # Filter successful experiments
+    successful_df = df[df['status'] == 'SUCCESS']
+
+    if successful_df.empty:
+        print("No successful experiments to analyze")
         plt.close()
         return None
-    
-    # 1. Time breakdown by stage
-    stage_times = df[available_cols].mean()
-    colors = plt.cm.Set3(np.linspace(0, 1, len(stage_times)))
-    bars = axes[0].bar(range(len(stage_times)), stage_times.values, color=colors)
-    axes[0].set_xticks(range(len(stage_times)))
-    axes[0].set_xticklabels([col.replace('_time', '').replace('_', ' ').title() 
-                             for col in stage_times.index], rotation=45, ha='right')
-    axes[0].set_ylabel('Average Time (ms)')
-    axes[0].set_title('Average Processing Time by Stage')
-    axes[0].grid(True, alpha=0.3)
-    
-    # Add value labels on bars
-    for bar, val in zip(bars, stage_times.values):
-        axes[0].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
-                    f'{val:.1f}', ha='center', va='bottom', fontsize=9)
-    
-    # 2. Total time by detector
-    if 'total_time' in df.columns and 'detector' in df.columns:
-        detector_times = df.groupby('detector')['total_time'].agg(['mean', 'std'])
-        x = range(len(detector_times))
-        axes[1].bar(x, detector_times['mean'], yerr=detector_times['std'], 
-                   capsize=5, color=['#FF6B6B', '#4ECDC4'])
+
+    # 1. Keypoints comparison by detector
+    if 'detector' in df.columns and 'num_keypoints_1' in df.columns:
+        detector_keypoints = successful_df.groupby('detector')[['num_keypoints_1', 'num_keypoints_2']].mean()
+        x = np.arange(len(detector_keypoints))
+        width = 0.35
+
+        bars1 = axes[0].bar(x - width/2, detector_keypoints['num_keypoints_1'], width,
+                           label='Image 1', color='#FF6B6B')
+        bars2 = axes[0].bar(x + width/2, detector_keypoints['num_keypoints_2'], width,
+                           label='Image 2', color='#4ECDC4')
+
+        axes[0].set_xlabel('Detector')
+        axes[0].set_ylabel('Average Keypoints')
+        axes[0].set_title('Keypoints Detected by Detector')
+        axes[0].set_xticks(x)
+        axes[0].set_xticklabels(detector_keypoints.index.str.upper())
+        axes[0].legend()
+        axes[0].grid(True, alpha=0.3)
+
+        # Add value labels
+        for bars in [bars1, bars2]:
+            for bar in bars:
+                height = bar.get_height()
+                axes[0].text(bar.get_x() + bar.get_width()/2., height,
+                           f'{int(height):,}', ha='center', va='bottom', fontsize=9)
+
+    # 2. Matches and Inliers by detector
+    if 'detector' in df.columns and 'num_matches' in df.columns:
+        detector_matches = successful_df.groupby('detector')[['num_matches', 'num_inliers']].mean()
+        x = np.arange(len(detector_matches))
+        width = 0.35
+
+        bars1 = axes[1].bar(x - width/2, detector_matches['num_matches'], width,
+                           label='Initial Matches', color='#FFD93D')
+        bars2 = axes[1].bar(x + width/2, detector_matches['num_inliers'], width,
+                           label='RANSAC Inliers', color='#6BCB77')
+
+        axes[1].set_xlabel('Detector')
+        axes[1].set_ylabel('Average Count')
+        axes[1].set_title('Matches vs Inliers by Detector')
         axes[1].set_xticks(x)
-        axes[1].set_xticklabels(detector_times.index.str.upper())
-        axes[1].set_ylabel('Total Time (ms)')
-        axes[1].set_title('Total Processing Time by Detector')
+        axes[1].set_xticklabels(detector_matches.index.str.upper())
+        axes[1].legend()
         axes[1].grid(True, alpha=0.3)
-        
+
         # Add value labels
-        for i, (mean, std) in enumerate(zip(detector_times['mean'], detector_times['std'])):
-            axes[1].text(i, mean + std + 5, f'{mean:.1f}±{std:.1f}', 
-                        ha='center', va='bottom', fontsize=9)
-    
-    # 3. Blending time comparison
-    if 'blending_time' in df.columns and 'blend_mode' in df.columns:
-        blend_times = df.groupby('blend_mode')['blending_time'].agg(['mean', 'std'])
-        x = range(len(blend_times))
-        colors = ['#FFD93D', '#6BCB77', '#4D96FF'][:len(blend_times)]
-        axes[2].bar(x, blend_times['mean'], yerr=blend_times['std'], 
-                   capsize=5, color=colors)
-        axes[2].set_xticks(x)
-        axes[2].set_xticklabels(blend_times.index.str.title())
-        axes[2].set_ylabel('Blending Time (ms)')
-        axes[2].set_title('Blending Time by Mode')
+        for bars in [bars1, bars2]:
+            for bar in bars:
+                height = bar.get_height()
+                axes[1].text(bar.get_x() + bar.get_width()/2., height,
+                           f'{int(height)}', ha='center', va='bottom', fontsize=9)
+
+    # 3. Inlier ratio by RANSAC threshold
+    if 'threshold' in df.columns and 'inlier_ratio' in df.columns:
+        threshold_ratio = successful_df.groupby('threshold')['inlier_ratio'].agg(['mean', 'std'])
+        x = threshold_ratio.index
+        axes[2].errorbar(x, threshold_ratio['mean'], yerr=threshold_ratio['std'],
+                        marker='o', capsize=5, capthick=2, linewidth=2, markersize=8,
+                        color='#4D96FF', ecolor='gray')
+        axes[2].set_xlabel('RANSAC Threshold')
+        axes[2].set_ylabel('Inlier Ratio (%)')
+        axes[2].set_title('Inlier Ratio vs RANSAC Threshold')
         axes[2].grid(True, alpha=0.3)
-        
+        axes[2].set_xticks(x)
+
         # Add value labels
-        for i, (mean, std) in enumerate(zip(blend_times['mean'], blend_times['std'])):
-            axes[2].text(i, mean + std + 0.5, f'{mean:.1f}±{std:.1f}', 
-                        ha='center', va='bottom', fontsize=9)
-    
-    # 4. Stacked time breakdown by detector
-    if len(available_cols) > 1 and 'detector' in df.columns:
-        detector_breakdown = df.groupby('detector')[available_cols].mean()
-        detector_breakdown.plot(kind='bar', stacked=True, ax=axes[3], 
-                               color=plt.cm.Set3(np.linspace(0, 1, len(available_cols))))
-        axes[3].set_xlabel('Detector')
-        axes[3].set_ylabel('Time (ms)')
-        axes[3].set_title('Time Breakdown by Detector')
-        axes[3].set_xticklabels(axes[3].get_xticklabels(), rotation=0)
-        axes[3].legend(title='Stage', bbox_to_anchor=(1.05, 1), loc='upper left',
-                      labels=[col.replace('_time', '').title() for col in available_cols])
-        axes[3].grid(True, alpha=0.3)
-    
+        for xi, yi, stdi in zip(x, threshold_ratio['mean'], threshold_ratio['std']):
+            axes[2].text(xi, yi + stdi + 2, f'{yi:.1f}%', ha='center', va='bottom', fontsize=9)
+
+    # 4. Success rate by scene
+    if 'scene' in df.columns:
+        scene_success = df.groupby(['scene', 'status']).size().unstack(fill_value=0)
+        if 'SUCCESS' in scene_success.columns:
+            success_rates = (scene_success['SUCCESS'] / scene_success.sum(axis=1) * 100)
+            colors = ['#FF6B6B', '#4ECDC4', '#FFD93D'][:len(success_rates)]
+            bars = axes[3].bar(range(len(success_rates)), success_rates.values, color=colors)
+            axes[3].set_xlabel('Scene')
+            axes[3].set_ylabel('Success Rate (%)')
+            axes[3].set_title('Success Rate by Scene')
+            axes[3].set_xticks(range(len(success_rates)))
+            axes[3].set_xticklabels([s.replace('_', ' ').title() for s in success_rates.index],
+                                    rotation=45, ha='right')
+            axes[3].grid(True, alpha=0.3)
+            axes[3].set_ylim(0, 105)
+
+            # Add value labels
+            for bar, val in zip(bars, success_rates.values):
+                axes[3].text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
+                           f'{val:.1f}%', ha='center', va='bottom', fontsize=9)
+
     plt.tight_layout()
-    output_path = os.path.join(output_dir, 'processing_times.png')
+    output_path = os.path.join(output_dir, 'metrics_analysis.png')
     plt.savefig(output_path, dpi=150, bbox_inches='tight')
     plt.close()
-    
-    print(f"Created timing analysis chart: {output_path}")
-    return 'processing_times.png'
+
+    print(f"Created metrics analysis chart: {output_path}")
+    return 'metrics_analysis.png'
 
 def create_visualization_showcase(viz_dir, output_dir):
     """Create HTML showcase for visualizations"""
@@ -392,15 +427,15 @@ def create_visualization_showcase(viz_dir, output_dir):
     return True
 
 def create_comprehensive_report(df, output_dir):
-    """Create main analysis report with timing data"""
-    
+    """Create main analysis report with REAL data only"""
+
     # Calculate statistics
     total_exp = len(df)
-    success_exp = len(df[df['num_inliers'] > 20]) if 'num_inliers' in df.columns else 0
+    success_exp = len(df[df['status'] == 'SUCCESS']) if 'status' in df.columns else 0
     success_rate = (success_exp / total_exp * 100) if total_exp > 0 else 0
-    
-    # Create timing chart
-    timing_chart = create_timing_analysis(df, output_dir)
+
+    # Create metrics analysis chart (no fake timing data)
+    metrics_chart = create_metrics_analysis(df, output_dir)
     
     # Copy all result images to output directory
     # Copy panorama images
@@ -598,62 +633,71 @@ def create_comprehensive_report(df, output_dir):
     
     # Add detector comparison if available
     if 'detector' in df.columns:
+        successful_df = df[df['status'] == 'SUCCESS']
         # Use columns that exist
         agg_dict = {}
-        if 'num_keypoints_1' in df.columns:
+        if 'num_keypoints_1' in df.columns and 'num_keypoints_2' in df.columns:
             agg_dict['num_keypoints_1'] = 'mean'
             agg_dict['num_keypoints_2'] = 'mean'
         if 'num_matches' in df.columns:
             agg_dict['num_matches'] = 'mean'
         if 'num_inliers' in df.columns:
             agg_dict['num_inliers'] = 'mean'
-        
-        if agg_dict:
-            detector_stats = df.groupby('detector').agg(agg_dict).round(0)
+        if 'inlier_ratio' in df.columns:
+            agg_dict['inlier_ratio'] = 'mean'
+
+        if agg_dict and not successful_df.empty:
+            detector_stats = successful_df.groupby('detector').agg(agg_dict).round(1)
         else:
             detector_stats = None
-        
+
         if detector_stats is not None and not detector_stats.empty:
             html += """
     <div class="metric-card">
-        <h3>Detector Comparison</h3>
+        <h3>Detector Comparison (Successful Experiments)</h3>
         <table>
             <tr>
                 <th>Detector</th>
 """
             # Add column headers based on what's available
             if 'num_keypoints_1' in detector_stats.columns:
-                html += "                <th>Avg Keypoints</th>\n"
+                html += "                <th>Avg Keypoints (Img1)</th>\n"
+                html += "                <th>Avg Keypoints (Img2)</th>\n"
             if 'num_matches' in detector_stats.columns:
                 html += "                <th>Avg Matches</th>\n"
             if 'num_inliers' in detector_stats.columns:
                 html += "                <th>Avg Inliers</th>\n"
+            if 'inlier_ratio' in detector_stats.columns:
+                html += "                <th>Avg Inlier Ratio</th>\n"
             html += "            </tr>\n"
-            
+
             for detector, row in detector_stats.iterrows():
                 html += f"""
             <tr>
                 <td><strong>{detector.upper()}</strong></td>
 """
                 if 'num_keypoints_1' in row:
-                    html += f"                <td>{row['num_keypoints_1']:.0f}</td>\n"
+                    html += f"                <td>{row['num_keypoints_1']:,.0f}</td>\n"
+                    html += f"                <td>{row['num_keypoints_2']:,.0f}</td>\n"
                 if 'num_matches' in row:
                     html += f"                <td>{row['num_matches']:.0f}</td>\n"
                 if 'num_inliers' in row:
                     html += f"                <td>{row['num_inliers']:.0f}</td>\n"
+                if 'inlier_ratio' in row:
+                    html += f"                <td>{row['inlier_ratio']:.1f}%</td>\n"
                 html += "            </tr>\n"
             html += """
         </table>
     </div>
 """
     
-    # Add timing chart if available
-    if timing_chart:
+    # Add metrics analysis chart if available
+    if metrics_chart:
         html += f"""
     <div class="metric-card">
-        <h3>Processing Time Analysis</h3>
-        <img src="{timing_chart}" alt="Processing Times">
-        <p>The chart shows processing time breakdown by stage and comparison across different configurations.</p>
+        <h3>Feature Detection & Matching Analysis</h3>
+        <img src="{metrics_chart}" alt="Metrics Analysis">
+        <p>Analysis of keypoints, matches, inliers, and success rates across different configurations.</p>
     </div>
 """
     
@@ -795,15 +839,16 @@ def create_comprehensive_report(df, output_dir):
     </div>
 """
     
-    # Add note about timing
+    # Add note about results
     html += """
     <div class="note">
-        <strong>Note on Results:</strong> 
+        <strong>Note on Results:</strong>
         <ul style="margin: 10px 0;">
-            <li>Processing times include all stages: detection, matching, homography, warping, and blending</li>
+            <li>All metrics shown are from actual experiment runs - no estimated data</li>
             <li>ORB detector produces more keypoints (~25k-50k) for denser matching</li>
             <li>AKAZE detector provides fewer but more stable keypoints (~5k-20k)</li>
-            <li>Multiband blending produces smoother transitions but takes more time</li>
+            <li>Higher RANSAC thresholds allow more matches but may include outliers</li>
+            <li>Success is determined by successful panorama creation with >20 inliers</li>
         </ul>
     </div>
 """

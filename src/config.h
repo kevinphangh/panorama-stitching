@@ -1,19 +1,34 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+/******************************************************************************
+ * CONFIGURATION FILE - Adjust these values to tune the panorama stitcher
+ *
+ * This file contains all the key parameters that control:
+ * - How many features to detect
+ * - How strict the matching should be
+ * - Memory limits and safety checks
+ *****************************************************************************/
+
 namespace PanoramaConfig {
-    // Feature Detection Configuration
-    constexpr int DEFAULT_MAX_FEATURES = 50000;  // Set high to avoid artificially limiting detector capabilities
-    constexpr int MIN_FEATURES = 10;
-    constexpr int MAX_FEATURES = 50000;
-    
-    // RANSAC Configuration
-    constexpr double DEFAULT_RANSAC_THRESHOLD = 3.0;  // Pixels - max reprojection error for inliers
-    constexpr double MIN_RANSAC_THRESHOLD = 0.1;
-    constexpr double MAX_RANSAC_THRESHOLD = 50.0;
-    constexpr double DEFAULT_RANSAC_CONFIDENCE = 0.995;  // Probability of finding correct model
-    constexpr int DEFAULT_RANSAC_MAX_ITERATIONS = 2000;
-    constexpr int MIN_INLIERS_REQUIRED = 20;
+    //==========================================================================
+    // FEATURE DETECTION - Controls how many keypoints we find
+    //==========================================================================
+    constexpr int DEFAULT_MAX_FEATURES = 50000;  // Max keypoints per image
+    constexpr int MIN_FEATURES = 10;             // Minimum needed to work
+    constexpr int MAX_FEATURES = 50000;          // Hard limit for memory
+
+    //==========================================================================
+    // RANSAC - Controls how we filter out bad matches
+    //==========================================================================
+    constexpr double DEFAULT_RANSAC_THRESHOLD = 3.0;   // Pixels - how far off a match can be
+                                                        // Lower = stricter (fewer but better matches)
+                                                        // Higher = more permissive (more matches, possibly wrong)
+    constexpr double MIN_RANSAC_THRESHOLD = 0.1;       // Very strict
+    constexpr double MAX_RANSAC_THRESHOLD = 50.0;      // Very permissive
+    constexpr double DEFAULT_RANSAC_CONFIDENCE = 0.995; // 99.5% confidence we found the right transformation
+    constexpr int DEFAULT_RANSAC_MAX_ITERATIONS = 2000; // Max attempts to find good model
+    constexpr int MIN_INLIERS_REQUIRED = 20;           // Need at least this many good matches
     
     // Panorama Size Limits
     constexpr int MAX_PANORAMA_DIMENSION = 15000;  // Increased for legitimate large panoramas

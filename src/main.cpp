@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <limits>
+#include <chrono>
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 
@@ -173,7 +174,8 @@ cv::Mat performStitchingDirect(
     bool visualize,
     int max_panorama_dimension
 ) {
-    
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     if (img1.empty() || img2.empty()) {
         std::cerr << "Error: One or both input images are empty\n";
         return cv::Mat();
@@ -241,8 +243,8 @@ cv::Mat performStitchingDirect(
     auto result1 = detector1->detect(img1);
     auto result2 = detector2->detect(img2);
     
-    std::cout << "Detected " << result1.getKeypointCount() << " and " 
-              << result2.getKeypointCount() << " keypoints\n";
+    std::cout << "Detected " << result1.getKeypointCount() << " keypoints (img1) and "
+              << result2.getKeypointCount() << " keypoints (img2)\n";
     
     std::cout << "Matching features...\n";
     FeatureMatcher matcher;
@@ -442,7 +444,12 @@ cv::Mat performStitchingDirect(
     panorama = blender.blend(warped1, warped2, mask1, warped_mask2);
     
     std::cout << "Panorama created successfully!\n";
-    
+
+    // Output total processing time for metrics tracking
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    std::cout << "Total time: " << duration.count() << " ms\n";
+
     return panorama;
 }
 

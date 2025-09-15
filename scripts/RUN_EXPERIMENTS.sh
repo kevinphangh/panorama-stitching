@@ -96,8 +96,8 @@ print_header "STEP 3: PREPARING RESULTS DIRECTORY"
 rm -rf results results_analysis
 mkdir -p results
 
-# Create CSV header for metrics
-echo "experiment,scene,images,detector,threshold,blend_mode,keypoints,matches,inliers,inlier_ratio,processing_time_ms,status" > results/metrics.csv
+# Create CSV header for metrics - only real data we can capture
+echo "experiment,scene,images,detector,threshold,blend_mode,keypoints1,keypoints2,matches,inliers,inlier_ratio,status" > results/metrics.csv
 
 print_status "Results directory cleaned and ready"
 
@@ -149,23 +149,43 @@ run_experiment() {
     
     if echo "$exp_output" | grep -q "Panorama saved"; then
         SUCCESS=$((SUCCESS + 1))
-        
-        # Extract metrics from output
-        local keypoints=$(echo "$exp_output" | grep -oP 'Detected \K\d+' | head -1)
+
+        # Extract REAL metrics from output - capture both keypoint counts
+        local keypoints_line=$(echo "$exp_output" | grep "Detected")
+        local keypoints1=$(echo "$keypoints_line" | grep -oP 'Detected \K\d+' | head -1)
+        local keypoints2=$(echo "$keypoints_line" | grep -oP 'and \K\d+' | head -1)
         local matches=$(echo "$exp_output" | grep -oP 'Found \K\d+(?= good matches)')
         local inliers=$(echo "$exp_output" | grep -oP 'RANSAC found \K\d+(?= inliers)')
         local ratio=$(echo "$exp_output" | grep -oP 'inliers \(\K[0-9.]+(?=%\))')
-        local time=$(echo "$exp_output" | grep -oP 'Total time: \K[0-9.]+(?= ms)')
-        
+
+        # Set defaults for missing values
+        keypoints1=${keypoints1:-0}
+        keypoints2=${keypoints2:-0}
+        matches=${matches:-0}
+        inliers=${inliers:-0}
+        ratio=${ratio:-0}
+
         # Write images pair info
         local img_pair="$(basename $img1)-$(basename $img2)"
-        
-        # Append to CSV
-        echo "$label,$scene,$img_pair,$detector,$threshold,$blend,$keypoints,$matches,$inliers,$ratio,$time,SUCCESS" >> results/metrics.csv
+
+        # Append to CSV - removed time since it doesn't exist
+        echo "$label,$scene,$img_pair,$detector,$threshold,$blend,$keypoints1,$keypoints2,$matches,$inliers,$ratio,SUCCESS" >> results/metrics.csv
     else
         FAILED=$((FAILED + 1))
+
+        # Try to extract whatever metrics we can even from failed attempts
+        local keypoints_line=$(echo "$exp_output" | grep "Detected")
+        local keypoints1=$(echo "$keypoints_line" | grep -oP 'Detected \K\d+' | head -1)
+        local keypoints2=$(echo "$keypoints_line" | grep -oP 'and \K\d+' | head -1)
+        local matches=$(echo "$exp_output" | grep -oP 'Found \K\d+(?= good matches)')
+
+        # Set defaults for missing values
+        keypoints1=${keypoints1:-0}
+        keypoints2=${keypoints2:-0}
+        matches=${matches:-0}
+
         local img_pair="$(basename $img1)-$(basename $img2)"
-        echo "$label,$scene,$img_pair,$detector,$threshold,$blend,0,0,0,0,0,FAILED" >> results/metrics.csv
+        echo "$label,$scene,$img_pair,$detector,$threshold,$blend,$keypoints1,$keypoints2,$matches,0,0,FAILED" >> results/metrics.csv
     fi
 }
 
@@ -190,9 +210,8 @@ run_multi_experiment() {
     
     if echo "$exp_output" | grep -q "Panorama saved\|created successfully"; then
         SUCCESS=$((SUCCESS + 1))
-        # Extract any available metrics
-        local time=$(echo "$exp_output" | grep -oP 'Total time: \K[0-9.]+(?= ms)' | head -1)
-        echo "$label,$scene,multi-image,$detector,3.0,feather,0,0,0,0,$time,SUCCESS" >> results/metrics.csv
+        # Multi-image doesn't provide detailed metrics in current implementation
+        echo "$label,$scene,multi-image,$detector,3.0,feather,0,0,0,0,0,SUCCESS" >> results/metrics.csv
     else
         FAILED=$((FAILED + 1))
         echo "$label,$scene,multi-image,$detector,3.0,feather,0,0,0,0,0,FAILED" >> results/metrics.csv

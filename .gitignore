@@ -114,3 +114,4 @@ perf.data.old
 *.rar
 *.7z
 results_organized/
+results_analysis/
