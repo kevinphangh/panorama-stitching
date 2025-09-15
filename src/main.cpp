@@ -4,6 +4,7 @@
 #include <sstream>
 #include <limits>
 #include <chrono>
+#include <filesystem>
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 
@@ -242,9 +243,37 @@ cv::Mat performStitchingDirect(
     std::cout << "Detecting features...\n";
     auto result1 = detector1->detect(img1);
     auto result2 = detector2->detect(img2);
-    
+
     std::cout << "Detected " << result1.getKeypointCount() << " keypoints (img1) and "
               << result2.getKeypointCount() << " keypoints (img2)\n";
+
+    // Save keypoint visualizations (always save, not just when visualize flag is set)
+    {
+        namespace fs = std::filesystem;
+        std::string viz_dir = "results/visualizations";
+        if (!fs::exists(viz_dir)) {
+            fs::create_directories(viz_dir);
+        }
+
+        // Generate a unique base name using timestamp
+        static int viz_counter = 0;
+        viz_counter++;
+        std::string base_name = "stitch_" + std::to_string(viz_counter) + "_" + detector_type;
+
+        // Save keypoint visualizations
+        cv::Mat kp_vis1, kp_vis2;
+        cv::drawKeypoints(img1, result1.keypoints, kp_vis1, cv::Scalar(0, 255, 0),
+                         cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+        cv::drawKeypoints(img2, result2.keypoints, kp_vis2, cv::Scalar(0, 255, 0),
+                         cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+
+        std::string kp1_path = viz_dir + "/" + base_name + "_keypoints1.jpg";
+        std::string kp2_path = viz_dir + "/" + base_name + "_keypoints2.jpg";
+
+        cv::imwrite(kp1_path, kp_vis1);
+        cv::imwrite(kp2_path, kp_vis2);
+        std::cout << "Saved keypoint visualizations to " << viz_dir << "/\n";
+    }
     
     std::cout << "Matching features...\n";
     FeatureMatcher matcher;
@@ -254,20 +283,70 @@ cv::Mat performStitchingDirect(
     );
     
     std::cout << "Found " << match_result.num_good_matches << " good matches\n";
-    
+
+    // Save initial matches visualization (before RANSAC)
+    {
+        namespace fs = std::filesystem;
+        std::string viz_dir = "results/visualizations";
+        if (!fs::exists(viz_dir)) {
+            fs::create_directories(viz_dir);
+        }
+
+        // Use the same counter as keypoints for consistent naming
+        static int match_counter = 0;
+        match_counter++;
+        std::string base_name = "stitch_" + std::to_string(match_counter) + "_" + detector_type;
+
+        cv::Mat match_vis_before;
+        cv::drawMatches(img1, result1.keypoints, img2, result2.keypoints,
+                       match_result.good_matches, match_vis_before,
+                       cv::Scalar(0, 255, 0), cv::Scalar(255, 0, 0),
+                       std::vector<char>(),
+                       cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+
+        std::string matches_before_path = viz_dir + "/" + base_name + "_matches_before.jpg";
+        cv::imwrite(matches_before_path, match_vis_before);
+        std::cout << "Saved initial matches visualization\n";
+    }
+
     std::cout << "Estimating homography...\n";
     HomographyEstimator h_estimator;
     h_estimator.setRANSACThreshold(ransac_threshold);
-    
+
     std::vector<cv::DMatch> inlier_matches;
     cv::Mat homography = h_estimator.estimateHomography(
         result1.keypoints, result2.keypoints,
         match_result.good_matches, inlier_matches
     );
-    
+
     auto ransac_result = h_estimator.getLastResult();
-    std::cout << "RANSAC found " << ransac_result.num_inliers 
+    std::cout << "RANSAC found " << ransac_result.num_inliers
               << " inliers (" << ransac_result.inlier_ratio * 100 << "%)\n";
+
+    // Save inlier matches visualization (after RANSAC)
+    if (!inlier_matches.empty()) {
+        namespace fs = std::filesystem;
+        std::string viz_dir = "results/visualizations";
+        if (!fs::exists(viz_dir)) {
+            fs::create_directories(viz_dir);
+        }
+
+        // Use the same counter for consistent naming across all visualizations
+        static int inlier_counter = 0;
+        inlier_counter++;
+        std::string base_name = "stitch_" + std::to_string(inlier_counter) + "_" + detector_type;
+
+        cv::Mat match_vis_after;
+        cv::drawMatches(img1, result1.keypoints, img2, result2.keypoints,
+                       inlier_matches, match_vis_after,
+                       cv::Scalar(0, 255, 0), cv::Scalar(255, 0, 0),
+                       std::vector<char>(),
+                       cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+
+        std::string matches_after_path = viz_dir + "/" + base_name + "_matches_after.jpg";
+        cv::imwrite(matches_after_path, match_vis_after);
+        std::cout << "Saved inlier matches visualization\n";
+    }
     
     if (homography.empty()) {
         std::cerr << "Failed to compute homography\n";
