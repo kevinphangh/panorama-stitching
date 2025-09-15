@@ -6,7 +6,7 @@ AI assistant guide for this Visual Computing panorama stitching project.
 
 ```bash
 # Run all experiments
-./RUN_EXPERIMENTS.sh
+./scripts/RUN_EXPERIMENTS.sh
 
 # Manual build
 cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
@@ -20,11 +20,11 @@ cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
 - **Feature Detection**: ORB & AKAZE detectors (src/feature_detection/)
 - **Matching**: Brute-force with Lowe's ratio test (src/feature_matching/)
 - **RANSAC**: Homography estimation with outlier removal
-- **Blending**: Simple, Feather, Multiband modes (src/stitching/)
+- **Blending**: SIMPLE_OVERLAY, FEATHERING, MULTIBAND modes (src/stitching/)
 - **Max Features**: Set to 50,000 for true performance
 
 ## Key Files
 
-- `RUN_EXPERIMENTS.sh` - Main experiment runner (48 tests)
+- `scripts/RUN_EXPERIMENTS.sh` - Main experiment runner (48 tests)
 - `scripts/analyze_results.py` - Results organization & analysis
 - `src/config.h` - Configuration constants

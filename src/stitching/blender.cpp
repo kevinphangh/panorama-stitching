@@ -195,6 +195,9 @@ std::vector<cv::Mat> Blender::createLaplacianPyramid(const cv::Mat& img, int lev
 }
 
 cv::Mat Blender::reconstructFromPyramid(const std::vector<cv::Mat>& pyramid) {
+    if (pyramid.empty()) {
+        return cv::Mat();
+    }
     cv::Mat current = pyramid.back();
     
     for (int i = pyramid.size() - 2; i >= 0; i--) {

@@ -109,13 +109,16 @@ bool parseInt(const std::string& arg, int& value, const std::string& param_name,
 
 int calculateAdaptiveFeatures(int image_pixels, int max_features) {
     int base_pixels = PanoramaConfig::REFERENCE_IMAGE_HEIGHT * PanoramaConfig::REFERENCE_IMAGE_WIDTH;
-    
+
     if (image_pixels > base_pixels * PanoramaConfig::PANORAMA_SCALE_THRESHOLD) {
-        int adaptive_features = static_cast<int>(max_features * std::sqrt(static_cast<double>(image_pixels) / base_pixels));
+        double scale_factor = std::sqrt(static_cast<double>(image_pixels) / base_pixels);
+        // Cap scale factor at 3.0 to prevent excessive feature detection on very large images
+        scale_factor = std::min(scale_factor, 3.0);
+        int adaptive_features = static_cast<int>(max_features * scale_factor);
         std::cout << "Scaling features for large image: " << adaptive_features << " (from " << max_features << ")\n";
         return adaptive_features;
     }
-    
+
     return max_features;
 }
 

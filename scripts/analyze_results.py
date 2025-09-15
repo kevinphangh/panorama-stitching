@@ -406,7 +406,16 @@ def create_comprehensive_report(df, output_dir):
     # Copy panorama images
     panoramas_dir = os.path.join(output_dir, 'panoramas')
     os.makedirs(panoramas_dir, exist_ok=True)
-    panorama_files = glob.glob('results/panorama*.jpg')
+    # Match the actual file patterns created by RUN_EXPERIMENTS.sh
+    panorama_patterns = [
+        'results/*_pair_*.jpg',
+        'results/*_multi_*.jpg',
+        'results/*_ransac_*.jpg',
+        'results/*_blend_*.jpg'
+    ]
+    panorama_files = []
+    for pattern in panorama_patterns:
+        panorama_files.extend(glob.glob(pattern))
     for pano in panorama_files:
         shutil.copy2(pano, panoramas_dir)
     

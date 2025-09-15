@@ -19,14 +19,14 @@ echo -e "${BLUE}========================================${NC}"
 echo ""
 
 # Check if results exist
-if [ ! -d "results_organized" ] && [ ! -d "results" ]; then
+if [ ! -d "results_analysis" ] && [ ! -d "results" ]; then
     echo -e "${YELLOW}⚠ No results found. Run ./RUN_EXPERIMENTS.sh first!${NC}"
     exit 1
 fi
 
 # Determine which results are available
-if [ -d "results_organized" ]; then
-    MAIN_RESULTS="results_organized/index.html"
+if [ -d "results_analysis" ]; then
+    MAIN_RESULTS="results_analysis/analysis_report.html"
 else
     MAIN_RESULTS=""
 fi
@@ -93,16 +93,16 @@ case $choice in
         echo ""
         echo "Option A - Live Server Extension:"
         echo "  1. Install 'Live Server' extension by Ritwick Dey"
-        echo "  2. Right-click on results_organized/index.html"
+        echo "  2. Right-click on results_analysis/analysis_report.html"
         echo "  3. Select 'Open with Live Server'"
         echo ""
         echo "Option B - Simple Browser:"
         echo "  1. Press Ctrl+Shift+P (Cmd+Shift+P on Mac)"
         echo "  2. Type 'Simple Browser'"
-        echo "  3. Enter: $(pwd)/results_organized/index.html"
+        echo "  3. Enter: $(pwd)/results_analysis/analysis_report.html"
         echo ""
         echo "Option C - Preview:"
-        echo "  1. Open results_organized/index.html in editor"
+        echo "  1. Open results_analysis/analysis_report.html in editor"
         echo "  2. Press Ctrl+Shift+V (Cmd+Shift+V on Mac)"
         ;;
         

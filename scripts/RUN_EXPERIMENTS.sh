@@ -93,7 +93,7 @@ fi
 
 print_header "STEP 3: PREPARING RESULTS DIRECTORY"
 
-rm -rf results results_organized
+rm -rf results results_analysis
 mkdir -p results
 
 # Create CSV header for metrics
@@ -295,14 +295,14 @@ echo "  • Success rate: $((SUCCESS * 100 / TOTAL))%"
 echo ""
 echo -e "${GREEN}Generated outputs:${NC}"
 echo "  • results/           - Raw experiment outputs"
-echo "  • results_organized/ - Organized results with HTML viewer"
+echo "  • results_analysis/  - Organized results with HTML viewer"
 echo ""
 echo -e "${YELLOW}To view results:${NC}"
 echo "  Run: ./VIEW_RESULTS.sh"
 echo "  (Provides 4 viewing options including VSCode and Python server)"
 echo ""
 echo -e "${BLUE}For the report:${NC}"
-echo "  • All quantitative data is in results_organized/"
+echo "  • All quantitative data is in results_analysis/"
 echo "  • Screenshots can be taken from the HTML pages"
 echo "  • Raw data is in results/ if needed"
 echo ""
