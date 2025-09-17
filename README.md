@@ -5,37 +5,53 @@ Visual Computing Assignment 1 - Feature Detection, Matching, and Panorama Stitch
 ## 🚀 Quick Start
 
 ```bash
-# Run everything with one command:
-./run.sh
+# Option 1: Use Makefile
+make build          # Build the project
+make test           # Quick test
+make run            # Run all experiments
+make view           # View results
 
-# This interactive menu lets you:
-# 1. Run all experiments (48 tests)
-# 2. Quick demo (3 tests)
-# 3. Test with your own images
-# 4. View results
+# Option 2: Interactive menu
+./run.sh            # Build, test, and run experiments interactively
+
+# Option 3: View results
+./view-results.sh   # Multiple viewing options for results
 ```
 
 ## 📁 Project Structure
 
 ```
 .
-├── src/                    # C++ implementation
-│   ├── feature_detection/  # ORB & AKAZE detectors
-│   ├── feature_matching/   # Brute-force matcher with Lowe's ratio
-│   ├── stitching/         # Warping & blending (3 modes)
-│   └── experiments/       # Experiment runner & visualization
-├── datasets/              # Test images (3 scenes x 3 images)
-├── scripts/               # Helper scripts
-├── results/               # Output panoramas & metrics
-├── results_analysis/      # HTML reports & charts
-└── docs/                  # Assignment specs & guides
+├── Makefile               # Build automation
+├── run.sh                 # Interactive runner
+├── view-results.sh        # Results viewer
+├── config/               # Configuration
+│   └── CLAUDE.md        # AI assistant guide
+├── docs/                 # Documentation (3 files)
+│   ├── ASSIGNMENT_DOCUMENTATION.md
+│   ├── Panorama_Stitching_Report.pdf
+│   └── VC1Assignment_1.pdf
+├── scripts/              # Core scripts (4 files)
+│   ├── analysis_pipeline.py
+│   ├── generate_pdf_report.py
+│   ├── run-experiments.sh
+│   └── run_panorama.sh
+├── src/                  # C++ source code
+│   ├── cli/             # Command line interface
+│   ├── experiments/     # Experiment runner
+│   ├── feature_detection/
+│   ├── feature_matching/
+│   ├── homography/
+│   ├── pipeline/
+│   └── stitching/
+└── datasets/            # Test images (3 scenes)
 ```
 
 ## 🔬 Technical Implementation
 
 ### Feature Detection
-- **ORB**: 50,000 keypoints max, optimized for speed
-- **AKAZE**: Variable keypoints, more robust to transformations
+- **ORB**: 2000 keypoints, fast with binary descriptors
+- **AKAZE**: 2000 keypoints, more robust to scale changes
 
 ### Feature Matching
 - Brute-force matching with Hamming distance (ORB) or L2 (AKAZE)
@@ -43,28 +59,13 @@ Visual Computing Assignment 1 - Feature Detection, Matching, and Panorama Stitch
 
 ### RANSAC Homography
 - Thresholds tested: 1.0, 2.0, 3.0, 4.0, 5.0 pixels
-- Minimum 4 point correspondences required
+- Minimum 20 inliers required for stable homography
 - 2000 iterations maximum
 
 ### Image Blending
-1. **Simple Overlay**: Direct pixel replacement
-2. **Feathering**: Linear blending in overlap region
-3. **Multiband**: Laplacian pyramid blending
-
-## 📊 Experiment Results
-
-**48 experiments** testing combinations of:
-- 2 detectors (ORB, AKAZE)
-- 3 scenes (indoor, outdoor1, outdoor2)
-- 5 RANSAC thresholds
-- 3 blending modes
-- Multi-image stitching
-
-### Key Findings
-- **Success Rate**: 81% (39/48 successful panoramas)
-- **ORB**: Best for outdoor scenes with texture
-- **AKAZE**: Superior for indoor/structured environments
-- **Optimal RANSAC**: Threshold 3.0 for most scenes
+1. **Simple**: Direct pixel replacement (fastest)
+2. **Feathering**: Linear blending in overlap region (best balance)
+3. **Multiband**: Laplacian pyramid blending (highest quality)
 
 ## 🛠️ Build & Run
 
@@ -73,117 +74,102 @@ Visual Computing Assignment 1 - Feature Detection, Matching, and Panorama Stitch
 # Ubuntu/Debian
 sudo apt-get install cmake g++ libopencv-dev python3-pip
 
-# macOS
-brew install cmake opencv python3
+# Python dependencies
+pip3 install pandas matplotlib numpy
 ```
 
-### Manual Build
+### Building
 ```bash
+# Using Makefile (recommended)
+make build
+
+# Or manually
 mkdir -p build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j4
-cd ..
 ```
 
-### Run Experiments
+### Running Experiments
 ```bash
-# All experiments (5-10 minutes)
+# Full experiment suite (43 tests)
+make run
+# or
 ./scripts/run-experiments.sh
 
-# Single panorama
-./scripts/run_panorama.sh --stitch img1.jpg img2.jpg --output panorama.jpg
+# Single panorama test
+./scripts/run_panorama.sh --stitch img1.jpg img2.jpg --output result.jpg
 
-# With options
+# With custom parameters
 ./scripts/run_panorama.sh --stitch img1.jpg img2.jpg \
     --detector akaze \
-    --threshold 3.0 \
-    --blend-mode multiband \
+    --ransac-threshold 3.0 \
+    --blend-mode feather \
     --output result.jpg
 ```
+
+## 📊 Results
+
+### Experiment Summary
+- **Total Tests**: 43 experiments across 3 scenes
+- **Success Rate**: 60.4% (26/43 successful)
+- **Generated**: 25 panoramas, 78+ visualizations
+
+### Performance by Scene
+- **Indoor**: 12 successful - Good structure for feature matching
+- **Outdoor1**: 12 successful - Rich texture provides reliable features
+- **Outdoor2**: 2 successful - Challenging with poor image overlap
+
+### Best Configurations
+| Metric | Configuration | Result |
+|--------|--------------|---------|
+| Highest Inlier Ratio | ORB + Feathering | 81.2% |
+| Most Reliable | AKAZE + RANSAC 3.0 | Consistent matches |
+| Fastest | ORB + Simple blending | ~1.5s per panorama |
+| Best Quality | AKAZE + Multiband | Seamless blending |
 
 ## 📈 View Results
 
 ```bash
-# Interactive results viewer
+# Interactive viewer with multiple options
 ./view-results.sh
 
-# Manual options:
-python3 scripts/analysis_pipeline.py --enhance  # Organize results
-firefox results/index.html                       # Browse organized results
-python3 -m http.server 8000 --directory results_analysis  # Analysis server
+# Or use Makefile
+make view           # Opens result viewer
+make serve          # HTTP server on port 8000
+
+# Direct access
+firefox results_analysis/analysis_report.html    # Main report
+firefox results/index.html                       # Enhanced navigation
 ```
 
-## 📊 Results and Analysis
-
-### Experiment Results Structure
-
-After running experiments, results are organized as:
-
+### Results Organization
 ```
-results/                         # Raw panorama outputs
-├── index.html                   # Enhanced navigation page
-├── metrics.csv                  # Raw experiment data
-├── by_scene/                    # Results grouped by test scene
-│   ├── indoor_scene1/
-│   ├── outdoor_scene1/
-│   └── outdoor_scene2/
-└── by_experiment/               # Results grouped by experiment type
-    ├── detectors/               # All detector comparisons
-    ├── ransac/                  # All RANSAC threshold tests
-    ├── blending/                # All blending mode tests
-    └── multi_image/             # Multi-image stitching results
+results/
+├── metrics.csv           # Experiment data
+├── index.html            # Navigation hub
+├── *.jpg                 # Panorama outputs
+└── visualizations/       # Debug images
 
-results_analysis/                # Created by analysis_pipeline.py
-├── index.html                   # Main analysis dashboard
-├── visualizations/              # Keypoint and match visualizations
-├── panoramas/                   # Organized panorama outputs
-└── datasets/                    # Input image references
+results_analysis/
+├── analysis_report.html  # Comprehensive analysis
+├── metrics_analysis.png  # Performance charts
+└── panoramas/           # Organized gallery
 ```
-
-### Performance Summary
-
-- **Total Experiments**: 48 comprehensive tests
-- **Success Rate**: 81% (39/48 successful panoramas)
-- **Best Overall**: ORB detector with 3.0 RANSAC threshold
-- **Indoor Scenes**: AKAZE detector performs better
-- **Outdoor Scenes**: ORB detector excels with texture
-
-### Recommended Configurations
-
-| Scene Type    | Detector | RANSAC | Blending  | Success Rate |
-|--------------|----------|--------|-----------|--------------|
-| Indoor       | AKAZE    | 3.0    | Feather   | 85%          |
-| Outdoor      | ORB      | 3.0    | Multiband | 90%          |
-| Low Texture  | AKAZE    | 2.0    | Feather   | 75%          |
-| Multi-Image  | ORB      | 3.0    | Multiband | 80%          |
-
-### Quality Indicators
-
-**Good Results:**
-- Inlier ratio > 30%
-- Keypoints detected > 1000 per image
-- Matches > 500
-- Clean, seamless panorama output
-
-**Problem Indicators:**
-- Inlier ratio < 10% - Poor feature matching
-- Keypoints < 500 - Insufficient features
-- Visible seams - Blending issues
-- Geometric distortion - Homography problems
 
 ## 📝 Documentation
 
-- **Assignment Report**: `Panorama_Stitching_Report.pdf`
-- **Complete Documentation**: `docs/ASSIGNMENT_DOCUMENTATION.md`
-- **Assignment Spec**: `docs/VC1Assignment_1.pdf`
+- **Complete Guide**: [`docs/ASSIGNMENT_DOCUMENTATION.md`](docs/ASSIGNMENT_DOCUMENTATION.md)
+- **Technical Report**: [`docs/Panorama_Stitching_Report.pdf`](docs/Panorama_Stitching_Report.pdf)
+- **Assignment Spec**: [`docs/VC1Assignment_1.pdf`](docs/VC1Assignment_1.pdf)
 
-## 🎯 Assignment Deliverables
+## 🎯 Key Features
 
-✅ **Implemented**: All required components
-✅ **Experiments**: 48 tests with metrics
-✅ **Report**: 3-page PDF with analysis
-✅ **Visualizations**: Keypoints, matches, histograms
-✅ **Multi-image**: 3+ image stitching support
+✅ **Dual Detectors**: ORB (speed) and AKAZE (robustness)
+✅ **Multiple Blending**: Simple, Feathering, Multiband
+✅ **RANSAC Validation**: 5 threshold levels tested
+✅ **Comprehensive Analysis**: Auto-generated HTML reports
+✅ **Visualization**: Keypoints, matches, and inlier filtering
+✅ **Multi-image Support**: Sequential stitching capability
 
 ## 📄 License
 
