@@ -75,14 +75,27 @@ output*.png
 !datasets/**/*.jpg
 !datasets/**/*.png
 
-# Test results directory
-results/
+# Results directory structure (keep .gitkeep files)
+results/experiments/*
+!results/experiments/.gitkeep
+results/metrics/*.csv
+!results/metrics/.gitkeep
+results/reports/html/*
+!results/reports/html/.gitkeep
+results/reports/pdf/*
+!results/reports/pdf/.gitkeep
+results/*.html
+results/*.json
+results_organized/
+results_analysis/
 
-# Temporary files
+# Temporary files and backups
 *.tmp
 *.temp
 *.log
 *.bak
+*.backup
+*~
 
 # Python cache (if any scripts)
 __pycache__/
@@ -113,5 +126,3 @@ perf.data.old
 *.zip
 *.rar
 *.7z
-results_organized/
-results_analysis/

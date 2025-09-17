@@ -1,10 +1,25 @@
 #!/usr/bin/env python3
 """
-Analyze and visualize panorama stitching experiment results.
-Creates organized HTML reports with charts and visualization galleries.
+Consolidated analysis pipeline for panorama stitching experiment results.
+Combines functionality from:
+- analyze_results.py (main analysis and HTML report generation)
+- fix_csv_format.py (CSV preprocessing to standardize format)
+- enhance_results_organization.py (enhanced file organization)
+
+Usage:
+    python3 scripts/analysis_pipeline.py [options]
+
+Options:
+    --enhance      Enable enhanced organization features
+    --csv-only     Only fix CSV format, don't run analysis
+    --help         Show this help message
+
+For backward compatibility, the default behavior matches analyze_results.py.
 """
 
 import os
+import sys
+import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,6 +31,76 @@ import glob
 plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'ggplot')
 plt.rcParams['figure.figsize'] = (10, 6)
 plt.rcParams['font.size'] = 10
+
+# ============================================================================
+# CSV FORMAT FIXING (from fix_csv_format.py)
+# ============================================================================
+
+def fix_csv_format(input_file='results/metrics.csv', output_file=None):
+    """Convert C++ experiment CSV format to match Python analysis expectations"""
+
+    if not os.path.exists(input_file):
+        print(f"Error: {input_file} not found")
+        return False
+
+    # Read the C++ generated CSV
+    try:
+        df = pd.read_csv(input_file)
+        print(f"Loaded {len(df)} experiments from C++ output")
+    except Exception as e:
+        print(f"Error reading CSV file: {e}")
+        return False
+
+    # Check if it's already in the right format
+    if 'scene' in df.columns and 'status' in df.columns:
+        print("CSV already in correct format")
+        return True
+
+    # Add missing columns that Python expects
+
+    # Extract scene from experiment name (e.g., "indoor_scene_orb_pair1-2" -> "indoor_scene")
+    if 'experiment' in df.columns:
+        df['scene'] = df['experiment'].str.extract(r'(indoor_scene|outdoor_scene\d*)')
+    else:
+        df['scene'] = 'unknown_scene'
+
+    # Add status based on whether inliers > 20 (typical success criteria)
+    if 'num_inliers' in df.columns:
+        df['status'] = df['num_inliers'].apply(lambda x: 'SUCCESS' if x > 20 else 'FAILED')
+    else:
+        df['status'] = 'SUCCESS'  # Assume success if we got results
+
+    # Rename columns to match expected format
+    rename_map = {
+        'ransac_threshold': 'threshold',
+        'num_keypoints_1': 'keypoints1',
+        'num_keypoints_2': 'keypoints2',
+        'num_matches': 'matches',
+        'num_inliers': 'inliers'
+    }
+
+    for old_col, new_col in rename_map.items():
+        if old_col in df.columns and new_col not in df.columns:
+            df[new_col] = df[old_col]
+
+    # Add images column (not critical but expected)
+    if 'images' not in df.columns:
+        df['images'] = 'img1.jpg-img2.jpg'
+
+    # Save the fixed CSV
+    if output_file:
+        df.to_csv(output_file, index=False)
+        print(f"Fixed CSV saved to {output_file}")
+
+    # Also overwrite the original for seamless integration
+    df.to_csv(input_file, index=False)
+    print(f"Original CSV updated at {input_file}")
+
+    return True
+
+# ============================================================================
+# MAIN ANALYSIS FUNCTIONALITY (from analyze_results.py)
+# ============================================================================
 
 def load_metrics(csv_path="results/metrics.csv"):
     """Load metrics from CSV file - REAL DATA ONLY"""
@@ -190,7 +275,7 @@ def create_visualization_showcase(viz_dir, output_dir):
     """Create HTML showcase for visualizations"""
     showcase_dir = os.path.join(output_dir, 'visualizations')
     os.makedirs(showcase_dir, exist_ok=True)
-    
+
     # Copy all visualization images
     viz_files = []
     for file in os.listdir(viz_dir):
@@ -199,17 +284,17 @@ def create_visualization_showcase(viz_dir, output_dir):
             dst = os.path.join(showcase_dir, file)
             shutil.copy2(src, dst)
             viz_files.append(file)
-    
+
     if not viz_files:
         print("No visualization files found")
         return
-    
+
     # Group visualizations by experiment
     experiments = {}
     for file in viz_files:
         # Parse filename to extract experiment info
         parts = file.replace('.jpg', '').replace('.png', '').split('_')
-        
+
         # Try to identify experiment name and visualization type
         if len(parts) >= 3:
             # Assume format: scene_img1_img2_detector_viztype.jpg
@@ -225,11 +310,11 @@ def create_visualization_showcase(viz_dir, output_dir):
             else:
                 exp_key = '_'.join(parts[:-1])
                 viz_type = parts[-1]
-            
+
             if exp_key not in experiments:
                 experiments[exp_key] = {}
             experiments[exp_key][viz_type] = file
-    
+
     # Create HTML showcase
     html = """<!DOCTYPE html>
 <html lang="en">
@@ -238,10 +323,10 @@ def create_visualization_showcase(viz_dir, output_dir):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualization Showcase</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; 
-            padding: 20px; 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
@@ -253,9 +338,9 @@ def create_visualization_showcase(viz_dir, output_dir):
             padding: 30px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        h1 { 
-            color: #333; 
-            border-bottom: 3px solid #667eea; 
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
             padding-bottom: 15px;
             margin-bottom: 30px;
         }
@@ -266,27 +351,27 @@ def create_visualization_showcase(viz_dir, output_dir):
             margin-bottom: 30px;
             border-left: 4px solid #667eea;
         }
-        .experiment { 
-            background: #fff; 
-            padding: 25px; 
-            margin: 30px 0; 
-            border-radius: 10px; 
+        .experiment {
+            background: #fff;
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             border: 1px solid #e0e0e0;
         }
-        .experiment h2 { 
-            color: #667eea; 
+        .experiment h2 {
+            color: #667eea;
             margin-top: 0;
             border-bottom: 2px solid #f0f0f0;
             padding-bottom: 10px;
         }
-        .viz-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
-            gap: 25px; 
-            margin-top: 25px; 
+        .viz-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 25px;
         }
-        .viz-item { 
+        .viz-item {
             background: #f8f9fa;
             padding: 15px;
             border-radius: 8px;
@@ -296,34 +381,34 @@ def create_visualization_showcase(viz_dir, output_dir):
             transform: translateY(-5px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
-        .viz-item img { 
-            width: 100%; 
-            height: auto; 
-            border-radius: 5px; 
+        .viz-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
             display: block;
         }
-        .viz-item h3 { 
-            margin: 0 0 10px 0; 
-            font-size: 14px; 
+        .viz-item h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
             color: #666;
             text-align: center;
             background: white;
             padding: 8px;
             border-radius: 5px;
         }
-        .navigation { 
-            margin-bottom: 20px; 
+        .navigation {
+            margin-bottom: 20px;
         }
-        .navigation a { 
+        .navigation a {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-            padding: 12px 25px; 
-            text-decoration: none; 
-            border-radius: 25px; 
+            color: white;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 25px;
             display: inline-block;
             transition: transform 0.3s ease;
         }
-        .navigation a:hover { 
+        .navigation a:hover {
             transform: scale(1.05);
         }
         .stats-box {
@@ -339,54 +424,54 @@ def create_visualization_showcase(viz_dir, output_dir):
 <body>
     <div class="container">
         <div class="navigation">
-            <a href="../index.html">← Back to Main Results</a>
+            <a href="../analysis_report.html">← Back to Main Results</a>
         </div>
         <h1>🔬 Visualization Showcase</h1>
-        
+
         <div class="description">
             <h3>📚 Understanding the Visualizations</h3>
             <p><strong>What are ORB and AKAZE?</strong></p>
             <ul style="margin-bottom: 15px;">
-                <li><strong>ORB (Oriented FAST and Rotated BRIEF):</strong> A FAST detector that finds many keypoints quickly. 
+                <li><strong>ORB (Oriented FAST and Rotated BRIEF):</strong> A FAST detector that finds many keypoints quickly.
                     Good for speed, finds corners and edges. Shows up as many small green circles (~25,000-50,000 points).</li>
-                <li><strong>AKAZE (Accelerated-KAZE):</strong> A more sophisticated detector that finds fewer but more stable keypoints. 
+                <li><strong>AKAZE (Accelerated-KAZE):</strong> A more sophisticated detector that finds fewer but more stable keypoints.
                     Better for accuracy, finds distinctive features. Shows up as fewer larger circles (~5,000-20,000 points).</li>
             </ul>
-            
+
             <p><strong>What Each Visualization Shows:</strong></p>
             <ul>
                 <li><strong>Original Images:</strong> The raw input photos before any processing</li>
-                <li><strong>Keypoints (Green Circles):</strong> Points the algorithm thinks are interesting/matchable 
+                <li><strong>Keypoints (Green Circles):</strong> Points the algorithm thinks are interesting/matchable
                     - like corners, edges, or unique patterns. Bigger circles = larger scale features.</li>
                 <li><strong>Initial Matches (Lines):</strong> All potential correspondences between images - many are wrong!</li>
-                <li><strong>RANSAC Filtered (Final Matches):</strong> Only the correct matches after removing outliers. 
+                <li><strong>RANSAC Filtered (Final Matches):</strong> Only the correct matches after removing outliers.
                     These are used to compute how to align the images.</li>
             </ul>
-            
+
             <p style="background: #e8f4f8; padding: 10px; border-radius: 5px; margin-top: 15px;">
-                <strong>💡 Simple Explanation:</strong> The algorithm finds interesting points in both images (keypoints), 
+                <strong>💡 Simple Explanation:</strong> The algorithm finds interesting points in both images (keypoints),
                 matches similar ones between images (matching), then removes incorrect matches (RANSAC) to properly align and stitch them together.
             </p>
         </div>
-        
+
         <div class="stats-box">
             <strong>""" + f"{len(experiments)} Experiments | {len(viz_files)} Visualizations" + """</strong>
         </div>
 """
-    
+
     # Add each experiment
     for exp_name in sorted(experiments.keys()):
         exp_files = experiments[exp_name]
-        
+
         # Clean up experiment name for display
         display_name = exp_name.replace('_', ' ').title()
-        
+
         html += f'''
         <div class="experiment">
             <h2>📊 {display_name}</h2>
             <div class="viz-grid">
 '''
-        
+
         # Define visualization order and labels
         viz_order = [
             ('img1', 'Original Image 1'),
@@ -398,7 +483,7 @@ def create_visualization_showcase(viz_dir, output_dir):
             ('all_matches', 'All Matches'),
             ('inliers', 'Final Inliers')
         ]
-        
+
         for viz_key, viz_label in viz_order:
             if viz_key in exp_files:
                 html += f'''
@@ -407,22 +492,22 @@ def create_visualization_showcase(viz_dir, output_dir):
                     <img src="{exp_files[viz_key]}" alt="{viz_label}" loading="lazy">
                 </div>
 '''
-        
+
         html += '''
             </div>
         </div>
 '''
-    
+
     html += """
     </div>
 </body>
 </html>"""
-    
+
     # Write HTML file
     showcase_path = os.path.join(showcase_dir, 'index.html')
     with open(showcase_path, 'w') as f:
         f.write(html)
-    
+
     print(f"Created visualization showcase: {showcase_path}")
     return True
 
@@ -436,7 +521,7 @@ def create_comprehensive_report(df, output_dir):
 
     # Create metrics analysis chart (no fake timing data)
     metrics_chart = create_metrics_analysis(df, output_dir)
-    
+
     # Copy all result images to output directory
     # Copy panorama images
     panoramas_dir = os.path.join(output_dir, 'panoramas')
@@ -453,7 +538,7 @@ def create_comprehensive_report(df, output_dir):
         panorama_files.extend(glob.glob(pattern))
     for pano in panorama_files:
         shutil.copy2(pano, panoramas_dir)
-    
+
     # Copy original dataset images
     datasets_dir = os.path.join(output_dir, 'datasets')
     os.makedirs(datasets_dir, exist_ok=True)
@@ -464,7 +549,7 @@ def create_comprehensive_report(df, output_dir):
             os.makedirs(scene_out, exist_ok=True)
             for img in glob.glob(f'{scene_path}/*.jpg'):
                 shutil.copy2(img, scene_out)
-    
+
     # Generate HTML report
     html = """<!DOCTYPE html>
 <html lang="en">
@@ -473,17 +558,17 @@ def create_comprehensive_report(df, output_dir):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panorama Stitching Analysis Report</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            max-width: 1400px; 
-            margin: 0 auto; 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
             padding: 20px;
             background: #f5f6fa;
         }
-        h1 { 
-            color: #2c3e50; 
-            border-bottom: 3px solid #3498db; 
-            padding-bottom: 15px; 
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
         }
         .summary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -500,10 +585,10 @@ def create_comprehensive_report(df, output_dir):
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border-left: 4px solid #3498db;
         }
-        img { 
-            max-width: 100%; 
-            height: auto; 
-            margin: 20px 0; 
+        img {
+            max-width: 100%;
+            height: auto;
+            margin: 20px 0;
             border-radius: 8px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
@@ -622,15 +707,15 @@ def create_comprehensive_report(df, output_dir):
 </head>
 <body>
     <h1>📊 Panorama Stitching - Complete Analysis Report</h1>
-    
+
     <div class="summary">
         <h2 style="margin-top: 0; color: white;">Executive Summary</h2>
-        <p style="font-size: 18px;">Analyzed <strong>""" + f"{total_exp}" + """</strong> experiments with 
+        <p style="font-size: 18px;">Analyzed <strong>""" + f"{total_exp}" + """</strong> experiments with
         <strong>""" + f"{success_rate:.1f}%" + """</strong> success rate</p>
         <p>Generated <strong>""" + f"{len(panorama_files)}" + """</strong> panoramas across 3 scenes</p>
     </div>
 """
-    
+
     # Add detector comparison if available
     if 'detector' in df.columns:
         successful_df = df[df['status'] == 'SUCCESS']
@@ -690,7 +775,7 @@ def create_comprehensive_report(df, output_dir):
         </table>
     </div>
 """
-    
+
     # Add metrics analysis chart if available
     if metrics_chart:
         html += f"""
@@ -700,14 +785,14 @@ def create_comprehensive_report(df, output_dir):
         <p>Analysis of keypoints, matches, inliers, and success rates across different configurations.</p>
     </div>
 """
-    
+
     # Add original dataset images section
     html += """
     <div class="metric-card">
         <h3>🖼️ Original Dataset Images</h3>
         <p>Input images used for panorama stitching experiments:</p>
 """
-    
+
     for scene in ['indoor_scene', 'outdoor_scene1', 'outdoor_scene2']:
         scene_path = os.path.join(datasets_dir, scene)
         if os.path.exists(scene_path):
@@ -727,17 +812,17 @@ def create_comprehensive_report(df, output_dir):
             </div>
 """
                 html += "        </div>\n"
-    
+
     html += "    </div>\n"
-    
+
     # Add panorama results section
     if panorama_files:
         html += """
     <div class="metric-card">
         <h3>🎯 All Stitched Panorama Results</h3>
-        <p><strong>What are these images?</strong> These are the final stitched panoramas created by aligning and blending image pairs. 
+        <p><strong>What are these images?</strong> These are the final stitched panoramas created by aligning and blending image pairs.
         Each shows two images merged into one wider view.</p>
-        
+
         <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <strong>How to interpret the results:</strong>
             <ul style="margin: 10px 0;">
@@ -746,15 +831,15 @@ def create_comprehensive_report(df, output_dir):
                 <li>❌ <strong>Failed stitching:</strong> Misaligned images, severe distortions, or black areas</li>
             </ul>
         </div>
-        
+
         <h4 style="color: #667eea;">ORB Detector Results</h4>
         <div class="panorama-showcase">
 """
-        
+
         # Show ALL panoramas, grouped by detector
         orb_panoramas = sorted([p for p in panorama_files if 'orb' in p])
         akaze_panoramas = sorted([p for p in panorama_files if 'akaze' in p])
-        
+
         # Display all ORB results
         for i, pano in enumerate(orb_panoramas):
             if i >= 12:  # Limit display for performance
@@ -762,7 +847,7 @@ def create_comprehensive_report(df, output_dir):
             pano_name = os.path.basename(pano)
             parts = pano_name.replace('.jpg', '').split('_')
             idx = parts[2] if len(parts) > 2 else str(i)
-            
+
             html += f"""
             <div class="panorama-item">
                 <h3>ORB Test #{idx}</h3>
@@ -770,14 +855,14 @@ def create_comprehensive_report(df, output_dir):
                 <p style="font-size: 11px; color: #666; margin: 5px 0;">File: {pano_name}</p>
             </div>
 """
-        
+
         html += """
         </div>
-        
+
         <h4 style="color: #667eea; margin-top: 30px;">AKAZE Detector Results</h4>
         <div class="panorama-showcase">
 """
-        
+
         # Display all AKAZE results
         for i, pano in enumerate(akaze_panoramas):
             if i >= 12:  # Limit display for performance
@@ -785,7 +870,7 @@ def create_comprehensive_report(df, output_dir):
             pano_name = os.path.basename(pano)
             parts = pano_name.replace('.jpg', '').split('_')
             idx = parts[2] if len(parts) > 2 else str(i)
-            
+
             html += f"""
             <div class="panorama-item">
                 <h3>AKAZE Test #{idx}</h3>
@@ -793,17 +878,17 @@ def create_comprehensive_report(df, output_dir):
                 <p style="font-size: 11px; color: #666; margin: 5px 0;">File: {pano_name}</p>
             </div>
 """
-        
+
         html += f"""
         </div>
-        
+
         <p style="text-align: center; margin-top: 20px; background: #fff3cd; padding: 10px; border-radius: 5px;">
             <strong>📊 Statistics:</strong> Generated {len(orb_panoramas)} ORB panoramas and {len(akaze_panoramas)} AKAZE panoramas<br>
             <em>Showing first 12 results from each detector. All {len(panorama_files)} panoramas are available in the panoramas/ folder.</em>
         </p>
     </div>
 """
-    
+
     # Add link to visualizations
     if os.path.exists(os.path.join(output_dir, 'visualizations', 'index.html')):
         html += """
@@ -814,11 +899,11 @@ def create_comprehensive_report(df, output_dir):
         <p style="margin-top: 10px;">See keypoints, matches, and RANSAC filtering for all experiments</p>
     </div>
 """
-    
+
     # Add results comparison charts if available
     results_images = glob.glob('results/*.jpg')
     comparison_images = [img for img in results_images if any(x in img for x in ['comparison', 'histogram', 'plot'])]
-    
+
     if comparison_images:
         html += """
     <div class="metric-card">
@@ -838,7 +923,7 @@ def create_comprehensive_report(df, output_dir):
         </div>
     </div>
 """
-    
+
     # Add note about results
     html += """
     <div class="note">
@@ -852,52 +937,356 @@ def create_comprehensive_report(df, output_dir):
         </ul>
     </div>
 """
-    
+
     html += """
 </body>
 </html>"""
-    
+
     # Write report
     report_path = os.path.join(output_dir, 'analysis_report.html')
     with open(report_path, 'w') as f:
         f.write(html)
-    
+
     print(f"Created analysis report: {report_path}")
 
+# ============================================================================
+# ENHANCED ORGANIZATION (from enhance_results_organization.py)
+# ============================================================================
+
+def enhance_organization():
+    """Add better organization to existing results."""
+
+    # Check if results exist
+    if not os.path.exists('results'):
+        print("❌ No results/ directory found. Run experiments first!")
+        return False
+
+    # Create additional organization within results/
+    print("\n📁 ENHANCING RESULTS ORGANIZATION")
+    print("="*40)
+
+    # Create new organizational structure
+    dirs_to_create = [
+        "results/by_scene/indoor_scene1",
+        "results/by_scene/outdoor_scene1",
+        "results/by_scene/outdoor_scene2",
+        "results/by_experiment/detectors",
+        "results/by_experiment/ransac",
+        "results/by_experiment/blending",
+        "results/by_experiment/multi_image"
+    ]
+
+    for dir_path in dirs_to_create:
+        Path(dir_path).mkdir(parents=True, exist_ok=True)
+
+    # Organize panoramas by scene
+    scenes = ['indoor_scene1', 'outdoor_scene1', 'outdoor_scene2']
+
+    for scene in scenes:
+        print(f"  Organizing {scene}...")
+
+        # Copy all files for this scene to its folder
+        scene_files = glob.glob(f"results/{scene}_*.jpg")
+        for src in scene_files:
+            filename = os.path.basename(src)
+            dst = f"results/by_scene/{scene}/{filename}"
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
+
+        # Create scene index
+        create_scene_index(scene)
+
+    # Organize by experiment type
+    print("  Organizing by experiment type...")
+
+    # Detector comparisons
+    for file in glob.glob("results/*_pair_*_*.jpg"):
+        dst = f"results/by_experiment/detectors/{os.path.basename(file)}"
+        shutil.copy2(file, dst)
+
+    # RANSAC tests
+    for file in glob.glob("results/*_ransac_*.jpg"):
+        dst = f"results/by_experiment/ransac/{os.path.basename(file)}"
+        shutil.copy2(file, dst)
+
+    # Blending tests
+    for file in glob.glob("results/*_blend_*.jpg"):
+        dst = f"results/by_experiment/blending/{os.path.basename(file)}"
+        shutil.copy2(file, dst)
+
+    # Multi-image tests
+    for file in glob.glob("results/*_multi_*.jpg"):
+        dst = f"results/by_experiment/multi_image/{os.path.basename(file)}"
+        shutil.copy2(file, dst)
+
+    # Create master index
+    create_master_index()
+
+    print("\n✅ Enhanced organization complete!")
+    return True
+
+def create_scene_index(scene):
+    """Create an index.html for each scene folder."""
+
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>{scene.replace('_', ' ').title()} Results</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
+        h1 {{ color: #333; border-bottom: 2px solid #4CAF50; }}
+        .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }}
+        .item {{ background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        img {{ width: 100%; height: auto; border-radius: 4px; }}
+        .label {{ font-weight: bold; margin-top: 10px; color: #555; }}
+    </style>
+</head>
+<body>
+    <h1>{scene.replace('_', ' ').title()} - All Results</h1>
+    <div class="grid">
+"""
+
+    # Add all images for this scene
+    for img in sorted(glob.glob(f"results/by_scene/{scene}/*.jpg")):
+        filename = os.path.basename(img)
+        # Extract test type from filename
+        if '_pair_' in filename:
+            label = f"Pair {filename.split('_pair_')[1].split('_')[0]} - {filename.split('_')[-1].replace('.jpg','').upper()}"
+        elif '_ransac_' in filename:
+            label = f"RANSAC Threshold {filename.split('_ransac_')[1].replace('.jpg','')}"
+        elif '_blend_' in filename:
+            label = f"Blending: {filename.split('_blend_')[1].replace('.jpg','').title()}"
+        elif '_multi_' in filename:
+            label = f"Multi-Image - {filename.split('_multi_')[1].replace('.jpg','').upper()}"
+        else:
+            label = filename
+
+        html += f"""
+        <div class="item">
+            <img src="{filename}" alt="{label}">
+            <div class="label">{label}</div>
+        </div>
+"""
+
+    html += """
+    </div>
+    <p style="margin-top: 40px;"><a href="../../index.html">← Back to Results Overview</a></p>
+</body>
+</html>
+"""
+
+    with open(f"results/by_scene/{scene}/index.html", 'w') as f:
+        f.write(html)
+
+def create_master_index():
+    """Create the master index.html for easy navigation."""
+
+    html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Panorama Results - Enhanced Organization</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        h1 { color: #333; margin: 0 0 10px 0; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .navigation { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 30px 0; }
+        .nav-section { background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; }
+        .nav-section h2 { margin-top: 0; color: #667eea; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 8px 0; }
+        a { color: #667eea; text-decoration: none; font-weight: 500; }
+        a:hover { text-decoration: underline; }
+        .stats { display: flex; gap: 30px; margin: 20px 0; padding: 20px; background: #f0f0f0; border-radius: 8px; }
+        .stat { text-align: center; flex: 1; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #667eea; }
+        .stat-label { color: #666; font-size: 0.9em; }
+        .existing-links { background: #e8f4f8; padding: 15px; border-radius: 8px; margin-top: 30px; }
+        .existing-links h3 { margin-top: 0; color: #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Panorama Stitching Results</h1>
+        <div class="subtitle">Enhanced Organization & Navigation</div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">48</div>
+                <div class="stat-label">Total Experiments</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Test Scenes</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">2</div>
+                <div class="stat-label">Detectors</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Blending Modes</div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <div class="nav-section">
+                <h2>📁 By Scene</h2>
+                <ul>
+                    <li>🏠 <a href="by_scene/indoor_scene1/index.html">Indoor Scene 1</a></li>
+                    <li>🌳 <a href="by_scene/outdoor_scene1/index.html">Outdoor Scene 1</a></li>
+                    <li>🏞️ <a href="by_scene/outdoor_scene2/index.html">Outdoor Scene 2</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <h2>🔬 By Experiment Type</h2>
+                <ul>
+                    <li>🔍 <a href="by_experiment/detectors/">Detector Comparisons</a></li>
+                    <li>🎯 <a href="by_experiment/ransac/">RANSAC Thresholds</a></li>
+                    <li>🎨 <a href="by_experiment/blending/">Blending Modes</a></li>
+                    <li>🖼️ <a href="by_experiment/multi_image/">Multi-Image Stitching</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="existing-links">
+            <h3>📈 Analysis & Visualizations</h3>
+            <ul>
+                <li>📊 <a href="../results_analysis/analysis_report.html">Full Analysis Dashboard</a> (from analysis pipeline)</li>
+                <li>🖼️ <a href="../results_analysis/visualizations/index.html">Keypoint & Match Visualizations</a></li>
+                <li>📋 <a href="metrics.csv">Raw Metrics Data (CSV)</a></li>
+                <li>📄 <a href="../Panorama_Stitching_Report.pdf">PDF Report</a> (if generated)</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 30px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
+            <strong>Quick Tips:</strong>
+            <ul style="padding-left: 20px; list-style: disc;">
+                <li>View by scene to see all experiments for a specific dataset</li>
+                <li>View by experiment type to compare same test across all scenes</li>
+                <li>Check the Analysis Dashboard for detailed metrics and charts</li>
+                <li>Raw panorama images are in the main results/ folder</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+    with open("results/index.html", 'w') as f:
+        f.write(html)
+
+    print("  ✓ Created results/index.html")
+
+# ============================================================================
+# MAIN FUNCTION AND ARGUMENT PARSING
+# ============================================================================
+
+def print_help():
+    """Print help message"""
+    print(__doc__)
+
 def main():
-    """Main analysis pipeline"""
+    """Main analysis pipeline with command-line argument support"""
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="Consolidated analysis pipeline for panorama stitching experiment results",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+    python3 scripts/analysis_pipeline.py                    # Run standard analysis (backward compatible)
+    python3 scripts/analysis_pipeline.py --enhance         # Run with enhanced organization
+    python3 scripts/analysis_pipeline.py --csv-only        # Only fix CSV format
+        """
+    )
+
+    parser.add_argument(
+        '--enhance',
+        action='store_true',
+        help='Enable enhanced organization features (from enhance_results_organization.py)'
+    )
+
+    parser.add_argument(
+        '--csv-only',
+        action='store_true',
+        help='Only fix CSV format, do not run full analysis'
+    )
+
+    parser.add_argument(
+        '--csv-input',
+        default='results/metrics.csv',
+        help='Input CSV file path (default: results/metrics.csv)'
+    )
+
+    args = parser.parse_args()
+
+    # Handle CSV-only mode
+    if args.csv_only:
+        print("CSV FORMAT FIXING MODE")
+        print("="*40)
+        success = fix_csv_format(args.csv_input)
+        if success:
+            print("✅ CSV format fixed successfully!")
+        else:
+            print("❌ Failed to fix CSV format")
+            sys.exit(1)
+        return
+
+    # Standard analysis pipeline (backward compatible)
     print("="*60)
     print("PANORAMA STITCHING RESULTS ANALYSIS")
     print("="*60)
-    
-    # Check for results
+
+    # Step 1: Fix CSV format automatically (preprocessing)
+    print("\n📋 Step 1: Preprocessing CSV format...")
+    fix_csv_format(args.csv_input)
+
+    # Step 2: Check for results
     if not os.path.exists('results'):
         print("Error: 'results' directory not found.")
         print("Please run experiments first using: ./panorama_stitcher --experiment-mode")
         return
-    
-    # Load metrics
-    df = load_metrics()
+
+    # Step 3: Load metrics
+    print("\n📊 Step 2: Loading experiment metrics...")
+    df = load_metrics(args.csv_input)
     if df is None:
         print("No metrics found. Please run experiments first.")
         return
-    
-    # Create output directory
+
+    # Step 4: Create output directory
     output_dir = 'results_analysis'
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Create comprehensive report
+
+    # Step 5: Create comprehensive report
+    print("\n📈 Step 3: Creating comprehensive analysis report...")
     create_comprehensive_report(df, output_dir)
-    
-    # Create visualization showcase if available
+
+    # Step 6: Create visualization showcase if available
+    print("\n🔬 Step 4: Processing visualizations...")
     viz_dir = 'results/visualizations'
     if os.path.exists(viz_dir):
         create_visualization_showcase(viz_dir, output_dir)
-    
+    else:
+        print("No visualizations directory found, skipping visualization showcase")
+
+    # Step 7: Enhanced organization (if requested)
+    if args.enhance:
+        print("\n🗂️  Step 5: Enhanced organization...")
+        enhance_organization()
+
+    # Final summary
     print("\n" + "="*60)
     print("✅ Analysis Complete!")
     print(f"📁 Results saved to: {output_dir}/")
     print(f"🌐 Open {output_dir}/analysis_report.html to view the report")
+
+    if args.enhance:
+        print(f"🗂️  Enhanced organization: results/index.html")
+        print("\n💡 Tip: Open results/index.html in a browser for easy navigation!")
+
     print("="*60)
 
 if __name__ == "__main__":

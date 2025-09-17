@@ -65,6 +65,8 @@ public:
     void exportMetricsToCSV(const std::string& csv_path);
     void generateVisualizations(const std::string& output_dir);
     void exportMatchDistances(const std::string& output_dir);
+
+    const std::vector<ExperimentResult>& getResults() const { return results_; }
     
 private:
     std::vector<ExperimentResult> results_;

@@ -6,7 +6,7 @@ AI assistant guide for this Visual Computing panorama stitching project.
 
 ```bash
 # Run all experiments
-./scripts/RUN_EXPERIMENTS.sh
+./scripts/run-experiments.sh
 
 # Manual build
 cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
@@ -25,6 +25,6 @@ cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make -j4
 
 ## Key Files
 
-- `scripts/RUN_EXPERIMENTS.sh` - Main experiment runner (48 tests)
-- `scripts/analyze_results.py` - Results organization & analysis
+- `scripts/run-experiments.sh` - Main experiment runner (48 tests)
+- `scripts/analysis_pipeline.py` - Results organization & analysis
 - `src/config.h` - Configuration constants

@@ -29,16 +29,27 @@ endif()
 
 # Common source files (without main)
 set(COMMON_SOURCES
-    src/feature_detection/feature_detector.cpp
+    # CLI modules
+    src/cli/argument_parser.cpp
+    # Pipeline modules
+    src/pipeline/stitching_pipeline.cpp
+    # Feature detection (removed empty feature_detector.cpp)
     src/feature_detection/orb_detector.cpp
     src/feature_detection/akaze_detector.cpp
+    src/feature_detection/detector_factory.cpp
+    # Feature matching
     src/feature_matching/matcher.cpp
     src/feature_matching/ransac.cpp
+    # Homography
     src/homography/homography_estimator.cpp
+    # Stitching
     src/stitching/image_warper.cpp
     src/stitching/blender.cpp
+    src/stitching/blender_factory.cpp
+    # Experiments
     src/experiments/experiment_runner.cpp
     src/experiments/visualization.cpp
+    src/experiments/report_generator.cpp
 )
 
 # Set RPATH handling to avoid library conflicts

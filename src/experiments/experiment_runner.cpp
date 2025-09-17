@@ -1,11 +1,12 @@
 #include "experiment_runner.h"
 #include "visualization.h"
-#include "../feature_detection/orb_detector.h"
-#include "../feature_detection/akaze_detector.h"
+#include "report_generator.h"
+#include "../feature_detection/detector_factory.h"
 #include "../feature_matching/matcher.h"
 #include "../homography/homography_estimator.h"
 #include "../stitching/image_warper.h"
 #include "../stitching/blender.h"
+#include "../stitching/blender_factory.h"
 #include <opencv2/opencv.hpp>
 #include <fstream>
 #include <iostream>
@@ -155,10 +156,11 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
     cv::imwrite(viz_dir + "/" + exp_name + "_img2.jpg", img2);
     
     std::unique_ptr<FeatureDetector> detector;
-    if (config.detector_type == "orb") {
-        detector = std::make_unique<ORBDetector>();
-    } else {
-        detector = std::make_unique<AKAZEDetector>();
+    try {
+        detector = DetectorFactory::createDetector(config.detector_type);
+    } catch (const std::exception& e) {
+        std::cerr << "Error creating detector: " << e.what() << "\n";
+        return ExperimentResult{}; // Return empty result
     }
     detector->setMaxFeatures(config.max_features);
     
@@ -239,13 +241,12 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
         result.warping_time_ms = std::chrono::duration<double, std::milli>(warp_end - warp_start).count();
         
         auto blend_start = std::chrono::high_resolution_clock::now();
-        Blender blender;
-        if (config.blend_mode == "simple") {
-            blender.setBlendMode(BlendMode::SIMPLE_OVERLAY);
-        } else if (config.blend_mode == "feather") {
-            blender.setBlendMode(BlendMode::FEATHERING);
-        } else if (config.blend_mode == "multiband") {
-            blender.setBlendMode(BlendMode::MULTIBAND);
+        std::unique_ptr<Blender> blender;
+        try {
+            blender = BlenderFactory::createBlender(config.blend_mode);
+        } catch (const std::exception& e) {
+            std::cerr << "Error creating blender: " << e.what() << "\n";
+            return ExperimentResult{}; // Return empty result
         }
         
         cv::Mat mask1 = cv::Mat::zeros(panorama.size(), CV_8UC1);
@@ -254,7 +255,7 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
         cv::warpPerspective(cv::Mat::ones(img2.size(), CV_8UC1) * 255, 
                            mask2, homography, panorama.size());
         
-        result.panorama = blender.blend(panorama, warped2, mask1, mask2);
+        result.panorama = blender->blend(panorama, warped2, mask1, mask2);
         auto blend_end = std::chrono::high_resolution_clock::now();
         result.blending_time_ms = std::chrono::duration<double, std::milli>(blend_end - blend_start).count();
     }
@@ -287,60 +288,20 @@ void ExperimentRunner::loadDatasets(const std::string& dataset_dir,
 }
 
 void ExperimentRunner::saveResults(const std::string& output_dir) {
-    if (!fs::exists(output_dir)) {
-        fs::create_directories(output_dir);
-    }
-    
-    int idx = 0;
-    for (const auto& result : results_) {
-        if (!result.panorama.empty()) {
-            std::string filename = output_dir + "/panorama_" + 
-                                 result.config.detector_type + "_" +
-                                 std::to_string(idx++) + ".jpg";
-            cv::imwrite(filename, result.panorama);
-        }
-    }
-    
+    ReportGenerator generator;
+    generator.saveExperimentResults(results_, output_dir);
+
     exportMetricsToCSV(output_dir + "/metrics.csv");
 }
 
 void ExperimentRunner::exportMetricsToCSV(const std::string& csv_path) {
-    std::ofstream file(csv_path);
-    if (!file.is_open()) {
-        std::cerr << "Error: Cannot open file for writing: " << csv_path << "\n";
-        return;
-    }
-
-    file << "experiment,detector,ransac_threshold,blend_mode,";
-    file << "num_keypoints_1,num_keypoints_2,num_matches,num_inliers,";
-    file << "inlier_ratio,reprojection_error,";
-    file << "detection_time,matching_time,homography_time,warping_time,blending_time,total_time\n";
-    
-    for (const auto& result : results_) {
-        file << result.config.name << ","
-             << result.config.detector_type << ","
-             << result.config.ransac_threshold << ","
-             << result.config.blend_mode << ","
-             << result.num_keypoints_img1 << ","
-             << result.num_keypoints_img2 << ","
-             << result.num_good_matches << ","
-             << result.num_inliers << ","
-             << result.inlier_ratio << ","
-             << result.reprojection_error << ","
-             << result.detection_time_ms << ","
-             << result.matching_time_ms << ","
-             << result.homography_time_ms << ","
-             << result.warping_time_ms << ","
-             << result.blending_time_ms << ","
-             << result.total_time_ms << "\n";
-    }
-    
-    file.close();
-    std::cout << "Metrics saved to " << csv_path << "\n";
+    ReportGenerator generator;
+    generator.exportToCSV(results_, csv_path);
 }
 
 void ExperimentRunner::generateReport(const std::string& output_path) {
-    std::cout << "Generating report to " << output_path << "\n";
+    ReportGenerator generator;
+    generator.generateMarkdownReport(results_, output_path);
 }
 
 void ExperimentRunner::generateVisualizations(const std::string& output_dir) {
@@ -385,41 +346,6 @@ void ExperimentRunner::generateVisualizations(const std::string& output_dir) {
 }
 
 void ExperimentRunner::exportMatchDistances(const std::string& output_dir) {
-    std::cout << "Exporting match distances...\n";
-    
-    // Create output directory if it doesn't exist
-    fs::create_directories(output_dir);
-    
-    // Export match distances for each detector type
-    std::map<std::string, std::vector<double>> distances_by_detector;
-    
-    for (const auto& result : results_) {
-        if (!result.match_distances.empty()) {
-            distances_by_detector[result.config.detector_type].insert(
-                distances_by_detector[result.config.detector_type].end(),
-                result.match_distances.begin(),
-                result.match_distances.end()
-            );
-        }
-    }
-    
-    // Save distances to CSV files
-    for (const auto& [detector, distances] : distances_by_detector) {
-        if (!distances.empty()) {
-            std::string filename = output_dir + "/" + detector + "_match_distances.csv";
-            std::ofstream file(filename);
-            if (!file.is_open()) {
-                std::cerr << "Error: Cannot open file for writing: " << filename << "\n";
-                continue;
-            }
-
-            file << "distance\n";
-            for (double dist : distances) {
-                file << dist << "\n";
-            }
-            
-            file.close();
-            std::cout << "Exported " << distances.size() << " distances for " << detector << " to " << filename << "\n";
-        }
-    }
+    ReportGenerator generator;
+    generator.exportMatchDistances(results_, output_dir);
 }

@@ -7,7 +7,7 @@
 #                                                                             #
 #  This is the ONLY script you need to run for all experiments!            #
 #                                                                             #
-#  Usage: ./RUN_EXPERIMENTS.sh                                              #
+#  Usage: ./run-experiments.sh                                              #
 #                                                                             #
 #  What it does:                                                            #
 #    1. Builds the C++ project                                              #
@@ -293,7 +293,7 @@ print_status "Experiments completed: $SUCCESS successful, $FAILED failed"
 print_header "STEP 5: ANALYZING & ORGANIZING RESULTS"
 
 # Run the analysis and organization script
-if python3 scripts/analyze_results.py; then
+if python3 scripts/analysis_pipeline.py; then
     print_status "Results analyzed and organized"
 else
     print_warning "Analysis script had issues, but continuing..."
@@ -317,7 +317,7 @@ echo "  • results/           - Raw experiment outputs"
 echo "  • results_analysis/  - Organized results with HTML viewer"
 echo ""
 echo -e "${YELLOW}To view results:${NC}"
-echo "  Run: ./VIEW_RESULTS.sh"
+echo "  Run: ./view-results.sh"
 echo "  (Provides 4 viewing options including VSCode and Python server)"
 echo ""
 echo -e "${BLUE}For the report:${NC}"

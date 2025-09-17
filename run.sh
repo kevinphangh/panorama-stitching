@@ -126,7 +126,7 @@ case $choice in
         echo "This will test multiple detectors, thresholds, and blending modes."
         echo "Estimated time: 5-10 minutes"
         echo ""
-        ./scripts/RUN_EXPERIMENTS.sh
+        ./scripts/run-experiments.sh
         echo -e "\n${GREEN}Complete! Check results_analysis/analysis_report.html${NC}"
         ;;
 
@@ -218,4 +218,4 @@ case $choice in
         ;;
 esac
 
-echo -e "\n${CYAN}Run ${BOLD}./RUN.sh${NC}${CYAN} again to see the menu${NC}"
+echo -e "\n${CYAN}Run ${BOLD}./run.sh${NC}${CYAN} again to see the menu${NC}"
