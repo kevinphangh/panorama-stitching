@@ -59,8 +59,8 @@ void ExperimentRunner::runFeatureDetectorComparison(const std::string& dataset_p
             config.detector_type = detector;
             config.ransac_threshold = 3.0;
             config.blend_mode = "feather";
-            config.max_features = 2000;
-            config.ratio_test_threshold = 0.7;
+            config.max_features = 5000;
+            config.ratio_test_threshold = 0.75;
             
             std::cout << "Testing " << detector << " on " << img1_path << "\n";
             auto result = runSingleExperiment(img1_path, img2_path, config);
@@ -86,8 +86,8 @@ void ExperimentRunner::runRANSACThresholdExperiment(const std::string& dataset_p
             config.detector_type = "orb";
             config.ransac_threshold = threshold;
             config.blend_mode = "feather";
-            config.max_features = 2000;
-            config.ratio_test_threshold = 0.7;
+            config.max_features = 5000;
+            config.ratio_test_threshold = 0.75;
             
             std::cout << "Testing RANSAC threshold " << threshold << "\n";
             auto result = runSingleExperiment(img1_path, img2_path, config);
@@ -113,8 +113,8 @@ void ExperimentRunner::runBlendingComparison(const std::string& dataset_path) {
             config.detector_type = "orb";
             config.ransac_threshold = 3.0;
             config.blend_mode = mode;
-            config.max_features = 2000;
-            config.ratio_test_threshold = 0.7;
+            config.max_features = 5000;
+            config.ratio_test_threshold = 0.75;
             
             std::cout << "Testing blend mode: " << mode << "\n";
             auto result = runSingleExperiment(img1_path, img2_path, config);

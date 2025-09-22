@@ -9,7 +9,7 @@ void ArgumentParser::printUsage(const char* program_name) {
               << "  --stitch <img1> <img2>       : Stitch two images\n"
               << "  --stitch-multiple <img1> ...  : Stitch multiple images\n"
               << "  --experiment-mode            : Run all experiments\n"
-              << "  --detector <orb|akaze>       : Choose feature detector (default: orb)\n"
+              << "  --detector <orb|akaze|sift>  : Choose feature detector (default: orb)\n"
               << "  --blend-mode <mode>          : Choose blend mode (simple|feather|multiband)\n"
               << "  --ransac-threshold <value>   : Set RANSAC threshold (default: 3.0)\n"
               << "  --max-features <num>         : Set max features (default: 2000)\n"
@@ -115,7 +115,7 @@ ProgramArguments ArgumentParser::parse(int argc, char** argv) {
                 return args;
             }
             args.detector_type = argv[i];
-            if (args.detector_type != "orb" && args.detector_type != "akaze") {
+            if (args.detector_type != "orb" && args.detector_type != "akaze" && args.detector_type != "sift") {
                 std::cerr << "Error: Unknown detector type: " << args.detector_type << "\n";
                 args.show_help = true;
                 return args;

@@ -36,6 +36,7 @@ set(COMMON_SOURCES
     # Feature detection (removed empty feature_detector.cpp)
     src/feature_detection/orb_detector.cpp
     src/feature_detection/akaze_detector.cpp
+    src/feature_detection/sift_detector.cpp
     src/feature_detection/detector_factory.cpp
     # Feature matching
     src/feature_matching/matcher.cpp

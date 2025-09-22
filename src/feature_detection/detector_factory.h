@@ -10,7 +10,8 @@ class DetectorFactory {
 public:
     enum class DetectorType {
         ORB,
-        AKAZE
+        AKAZE,
+        SIFT
     };
 
     static std::unique_ptr<FeatureDetector> createDetector(const std::string& type);
