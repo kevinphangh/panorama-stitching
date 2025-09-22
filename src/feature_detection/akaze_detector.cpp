@@ -32,14 +32,12 @@ DetectionResult AKAZEDetector::detect(const cv::Mat& image) {
         gray = image;
     }
     
-    // Detect keypoints first
     std::vector<cv::KeyPoint> all_keypoints;
     
     result.detection_time_ms = measureTime([&]() {
         detector_->detect(gray, all_keypoints);
     });
     
-    // Keep only the top N keypoints by response
     if (all_keypoints.size() > static_cast<size_t>(max_features_)) {
         std::partial_sort(all_keypoints.begin(), 
                          all_keypoints.begin() + max_features_,
@@ -51,7 +49,6 @@ DetectionResult AKAZEDetector::detect(const cv::Mat& image) {
         all_keypoints.resize(max_features_);
     }
     
-    // Compute descriptors for selected keypoints
     result.description_time_ms = measureTime([&]() {
         detector_->compute(gray, all_keypoints, result.descriptors);
     });

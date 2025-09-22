@@ -8,16 +8,13 @@
 #include "experiments/experiment_runner.h"
 
 int main(int argc, char** argv) {
-    // Parse command line arguments
     ProgramArguments args = ArgumentParser::parse(argc, argv);
 
-    // Show help if requested or if there was an error
     if (args.show_help) {
         ArgumentParser::printUsage(argv[0]);
         return args.mode == ProgramArguments::NONE ? 1 : 0;
     }
 
-    // Handle different modes
     switch (args.mode) {
         case ProgramArguments::EXPERIMENT: {
             std::cout << "\n=== Running experiments ===\n";
@@ -64,7 +61,6 @@ int main(int argc, char** argv) {
             std::cout << "\n=== Stitching multiple images ===\n";
             std::vector<cv::Mat> images;
 
-            // Load all images
             for (const auto& path : args.image_paths) {
                 cv::Mat img = cv::imread(path);
                 if (img.empty()) {
@@ -74,7 +70,6 @@ int main(int argc, char** argv) {
                 images.push_back(img);
             }
 
-            // Perform sequential stitching
             cv::Mat result = StitchingPipeline::performSequentialStitching(
                 images,
                 args.detector_type,

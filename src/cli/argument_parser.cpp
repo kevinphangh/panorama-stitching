@@ -19,7 +19,6 @@ void ArgumentParser::printUsage(const char* program_name) {
 }
 
 bool ArgumentParser::isValidOutputPath(const std::string& path) {
-    // Security: prevent path traversal and writing to system directories
     if (path.find("..") != std::string::npos) {
         std::cerr << "Error: Path traversal detected in output path\n";
         return false;

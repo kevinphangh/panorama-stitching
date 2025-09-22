@@ -20,7 +20,6 @@ int StitchingPipeline::calculateAdaptiveFeatures(int image_pixels, int max_featu
 
     if (image_pixels > base_pixels * PanoramaConfig::PANORAMA_SCALE_THRESHOLD) {
         double scale_factor = std::sqrt(static_cast<double>(image_pixels) / base_pixels);
-        // Cap scale factor at 3.0 to prevent excessive feature detection on very large images
         scale_factor = std::min(scale_factor, 3.0);
         int adaptive_features = static_cast<int>(max_features * scale_factor);
         std::cout << "Scaling features for large image: " << adaptive_features << " (from " << max_features << ")\n";
@@ -130,7 +129,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
     std::cout << "Detected " << result1.getKeypointCount() << " keypoints (img1) and "
               << result2.getKeypointCount() << " keypoints (img2)\n";
 
-    // Save keypoint visualizations (always save, not just when visualize flag is set)
     {
         namespace fs = std::filesystem;
         std::string viz_dir = "results/visualizations";
@@ -143,7 +141,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
         viz_counter++;
         std::string base_name = "stitch_" + std::to_string(viz_counter) + "_" + detector_type;
 
-        // Save keypoint visualizations
         cv::Mat kp_vis1, kp_vis2;
         cv::drawKeypoints(img1, result1.keypoints, kp_vis1, cv::Scalar(0, 255, 0),
                          cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
@@ -167,7 +164,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
 
     std::cout << "Found " << match_result.num_good_matches << " good matches\n";
 
-    // Save initial matches visualization (before RANSAC)
     {
         namespace fs = std::filesystem;
         std::string viz_dir = "results/visualizations";
@@ -206,7 +202,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
     std::cout << "RANSAC found " << ransac_result.num_inliers
               << " inliers (" << ransac_result.inlier_ratio * 100 << "%)\n";
 
-    // Save inlier matches visualization (after RANSAC)
     if (!inlier_matches.empty()) {
         namespace fs = std::filesystem;
         std::string viz_dir = "results/visualizations";
@@ -326,7 +321,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
     std::vector<cv::Point2f> corners2_transformed;
     cv::perspectiveTransform(corners2, corners2_transformed, H_inv);
 
-    // Find min/max coordinates
     float min_x = 0, max_x = static_cast<float>(img1.cols);
     float min_y = 0, max_y = static_cast<float>(img1.rows);
 
@@ -342,7 +336,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
         0, 1, -min_y,
         0, 0, 1);
 
-    // Calculate output size with padding
     cv::Size panorama_size(
         static_cast<int>(max_x - min_x) + PanoramaConfig::PANORAMA_PADDING * 2,
         static_cast<int>(max_y - min_y) + PanoramaConfig::PANORAMA_PADDING * 2
@@ -385,7 +378,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
     cv::warpPerspective(cv::Mat::ones(img1.size(), CV_8UC1) * 255,
                        mask1, translation, panorama_size);
 
-    // Warp second image with inverse homography (img2 -> img1 coordinate system)
     cv::Mat warped2;
     cv::Mat warped_mask2;
     cv::warpPerspective(img2, warped2, translation * H_inv, panorama_size);

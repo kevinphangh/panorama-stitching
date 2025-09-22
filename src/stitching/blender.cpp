@@ -106,7 +106,6 @@ cv::Mat Blender::multibandBlend(const cv::Mat& img1, const cv::Mat& img2,
         return cv::Mat();
     }
     
-    // Reduce pyramid levels for large images to avoid excessive memory usage
     size_t pixel_count = static_cast<size_t>(img1.rows) * img1.cols;
     size_t estimated_memory = pixel_count * 3 * 4 * 2 * num_bands;  // bytes: pixels * channels * float * images * levels
     

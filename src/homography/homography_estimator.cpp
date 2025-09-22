@@ -21,7 +21,6 @@ cv::Mat HomographyEstimator::estimateHomography(
         return cv::Mat();
     }
     
-    // Extract matched point pairs, ensuring arrays stay synchronized
     std::vector<cv::Point2f> points1, points2;
     points1.reserve(matches.size());
     points2.reserve(matches.size());
@@ -44,7 +43,6 @@ cv::Mat HomographyEstimator::estimateHomography(
                                          reprojection_threshold,
                                          ransac_confidence_);
     
-    // Map RANSAC inlier mask back to original match indices
     inlier_matches.clear();
     size_t valid_idx = 0;
     for (size_t i = 0; i < matches.size(); i++) {
@@ -66,7 +64,6 @@ cv::Rect HomographyEstimator::calculateOutputBounds(
     const cv::Mat& img2,
     const cv::Mat& H) {
     
-    // Calculate bounding box to contain both original and transformed images
     std::vector<cv::Point2f> corners2(4);
     corners2[0] = cv::Point2f(0, 0);
     corners2[1] = cv::Point2f(static_cast<float>(img2.cols), 0);
@@ -99,7 +96,6 @@ cv::Rect HomographyEstimator::calculateOutputBounds(
     int width = static_cast<int>(std::ceil(max_x - min_x)) + padding * 2;
     int height = static_cast<int>(std::ceil(max_y - min_y)) + padding * 2;
     
-    // Cap dimensions to MAX_PANORAMA_DIMENSION for memory safety
     width = std::min(width, PanoramaConfig::MAX_PANORAMA_DIMENSION);
     height = std::min(height, PanoramaConfig::MAX_PANORAMA_DIMENSION);
     

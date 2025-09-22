@@ -11,16 +11,12 @@
  *****************************************************************************/
 
 namespace PanoramaConfig {
-    //==========================================================================
     // FEATURE DETECTION - Controls how many keypoints we find
-    //==========================================================================
     constexpr int DEFAULT_MAX_FEATURES = 50000;  // Max keypoints per image
     constexpr int MIN_FEATURES = 10;             // Minimum needed to work
     constexpr int MAX_FEATURES = 50000;          // Hard limit for memory
 
-    //==========================================================================
     // RANSAC - Controls how we filter out bad matches
-    //==========================================================================
     constexpr double DEFAULT_RANSAC_THRESHOLD = 3.0;   // Pixels - how far off a match can be
                                                         // Lower = stricter (fewer but better matches)
                                                         // Higher = more permissive (more matches, possibly wrong)

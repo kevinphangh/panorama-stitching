@@ -141,7 +141,6 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
         return result;
     }
     
-    // Save original images for visualization
     std::string exp_name = fs::path(img1_path).parent_path().filename().string() + "_" + 
                           fs::path(img1_path).stem().string() + "_" + 
                           fs::path(img2_path).stem().string() + "_" + 
@@ -160,7 +159,7 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
         detector = DetectorFactory::createDetector(config.detector_type);
     } catch (const std::exception& e) {
         std::cerr << "Error creating detector: " << e.what() << "\n";
-        return ExperimentResult{}; // Return empty result
+        return ExperimentResult{};
     }
     detector->setMaxFeatures(config.max_features);
     
@@ -172,7 +171,6 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
     result.detection_time_ms = det_result1.detection_time_ms + det_result2.detection_time_ms;
     result.description_time_ms = det_result1.description_time_ms + det_result2.description_time_ms;
     
-    // Save keypoint visualizations
     cv::Mat kp_vis1, kp_vis2;
     cv::drawKeypoints(img1, det_result1.keypoints, kp_vis1, cv::Scalar(0, 255, 0), 
                      cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
@@ -193,7 +191,6 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
     result.matching_time_ms = match_result.matching_time_ms;
     result.match_distances = match_result.match_distances;
     
-    // Save match visualization (before RANSAC)
     cv::Mat match_vis;
     cv::drawMatches(img1, det_result1.keypoints, img2, det_result2.keypoints,
                    match_result.good_matches, match_vis, cv::Scalar(0, 255, 0),
@@ -219,7 +216,6 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
     result.ransac_iterations = ransac_result.num_iterations;
     result.homography_time_ms = std::chrono::duration<double, std::milli>(h_end - h_start).count();
     
-    // Save inlier match visualization (after RANSAC)
     if (!inlier_matches.empty()) {
         cv::Mat inlier_vis;
         cv::drawMatches(img1, det_result1.keypoints, img2, det_result2.keypoints,
@@ -246,7 +242,7 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
             blender = BlenderFactory::createBlender(config.blend_mode);
         } catch (const std::exception& e) {
             std::cerr << "Error creating blender: " << e.what() << "\n";
-            return ExperimentResult{}; // Return empty result
+            return ExperimentResult{};
         }
         
         cv::Mat mask1 = cv::Mat::zeros(panorama.size(), CV_8UC1);
@@ -268,7 +264,6 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
 
 void ExperimentRunner::loadDatasets(const std::string& dataset_dir,
                                    std::vector<std::pair<std::string, std::string>>& image_pairs) {
-    // Look for image pairs in subdirectories
     for (const auto& entry : fs::directory_iterator(dataset_dir)) {
         if (fs::is_directory(entry)) {
             std::vector<std::string> images;
@@ -279,7 +274,6 @@ void ExperimentRunner::loadDatasets(const std::string& dataset_dir,
                 }
             }
             
-            // Create pairs from consecutive images
             for (size_t i = 0; i + 1 < images.size(); i++) {
                 image_pairs.push_back({images[i], images[i + 1]});
             }
@@ -307,16 +301,13 @@ void ExperimentRunner::generateReport(const std::string& output_path) {
 void ExperimentRunner::generateVisualizations(const std::string& output_dir) {
     std::cout << "Generating visualizations...\n";
     
-    // Create output directory if it doesn't exist
     fs::create_directories(output_dir);
     
-    // Generate visualizations from the CSV file
     std::string csv_path = output_dir + "/metrics.csv";
     if (fs::exists(csv_path)) {
         Visualization::generateExperimentReport(csv_path, output_dir);
     }
     
-    // Generate match distance histograms for each detector
     std::map<std::string, std::vector<double>> distances_by_detector;
     
     for (const auto& result : results_) {
@@ -329,7 +320,6 @@ void ExperimentRunner::generateVisualizations(const std::string& output_dir) {
         }
     }
     
-    // Save histograms as images
     for (const auto& [detector, distances] : distances_by_detector) {
         if (!distances.empty()) {
             std::string title = detector + " Match Distances";
