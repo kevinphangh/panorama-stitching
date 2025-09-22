@@ -20,7 +20,7 @@ public:
     static std::string typeToString(DetectorType type);
 
 private:
-    DetectorFactory() = delete; // Static class, prevent instantiation
+    DetectorFactory() = delete;
 };
 
 #endif // DETECTOR_FACTORY_H

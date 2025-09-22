@@ -302,7 +302,7 @@ void Visualization::generateExperimentReport(
     }
     
     std::string line;
-    std::getline(file, line); // Skip header
+    std::getline(file, line);
     
     std::vector<double> orb_times, akaze_times;
     std::vector<double> orb_inliers, akaze_inliers;

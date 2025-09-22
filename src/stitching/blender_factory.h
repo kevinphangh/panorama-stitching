@@ -14,7 +14,7 @@ public:
     static std::string modeToString(BlendMode mode);
 
 private:
-    BlenderFactory() = delete; // Static class, prevent instantiation
+    BlenderFactory() = delete;
 };
 
 #endif // BLENDER_FACTORY_H

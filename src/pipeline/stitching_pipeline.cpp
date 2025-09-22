@@ -439,7 +439,7 @@ cv::Mat StitchingPipeline::performSequentialStitching(
             std::cerr << "Failed to stitch image " << (i + 1) << "\n";
             if (i == 0 && middle_idx + 1 < images.size()) {
                 std::cerr << "Continuing with right side images...\n";
-                panorama = images[middle_idx].clone();  // Reset to middle
+                panorama = images[middle_idx].clone();
                 break;
             }
             return cv::Mat();
@@ -461,7 +461,7 @@ cv::Mat StitchingPipeline::performSequentialStitching(
             std::cerr << "Failed to stitch image " << (i + 1) << "\n";
             if (i == images.size() - 1) {
                 std::cerr << "Returning partial panorama...\n";
-                return panorama;  // Return what we have so far
+                return panorama;
             }
             return cv::Mat();
         }
