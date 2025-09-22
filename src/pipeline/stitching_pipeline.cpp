@@ -155,7 +155,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
 
     std::cout << "Matching features...\n";
     FeatureMatcher matcher;
-    // Use L2 norm for SIFT/AKAZE, Hamming for ORB
     if (detector_type == "sift") {
         matcher.setMatcherType("BruteForce-L2");
     } else if (detector_type == "akaze") {
@@ -166,7 +165,7 @@ cv::Mat StitchingPipeline::performStitchingDirect(
     auto match_result = matcher.matchFeatures(
         result1.descriptors, result2.descriptors,
         result1.keypoints, result2.keypoints,
-        0.75  // Use 0.75 ratio test threshold - balance between quality and quantity
+        0.75
     );
 
     std::cout << "Found " << match_result.num_good_matches << " good matches\n";

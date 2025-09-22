@@ -50,7 +50,7 @@ void ExperimentRunner::runFeatureDetectorComparison(const std::string& dataset_p
         return;
     }
     
-    std::vector<std::string> detectors = {"orb", "akaze"};
+    std::vector<std::string> detectors = {"orb", "akaze", "sift"};
     
     for (const auto& [img1_path, img2_path] : image_pairs) {
         for (const auto& detector : detectors) {

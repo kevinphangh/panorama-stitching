@@ -38,24 +38,33 @@ cv::Mat HomographyEstimator::estimateHomography(
         return cv::Mat();
     }
     
-    ransac_.setReprojectionThreshold(reprojection_threshold);
-    last_result_ = ransac_.findHomography(points1, points2, 
-                                         reprojection_threshold,
-                                         ransac_confidence_);
-    
+    cv::Mat inlier_mask;
+    cv::Mat homography = cv::findHomography(points1, points2, cv::RANSAC,
+                                           reprojection_threshold, inlier_mask);
+
+    int inlier_count = inlier_mask.empty() ? 0 : cv::countNonZero(inlier_mask);
+    if (homography.empty() || inlier_count < PanoramaConfig::MIN_INLIERS_REQUIRED) {
+        std::cout << "RANSAC found only " << inlier_count << " inliers, trying LMEDS...\n";
+        homography = cv::findHomography(points1, points2, cv::LMEDS,
+                                       reprojection_threshold, inlier_mask);
+        inlier_count = inlier_mask.empty() ? 0 : cv::countNonZero(inlier_mask);
+    }
+
     inlier_matches.clear();
-    size_t valid_idx = 0;
-    for (size_t i = 0; i < matches.size(); i++) {
-        if (matches[i].queryIdx >= 0 && matches[i].queryIdx < static_cast<int>(keypoints1.size()) &&
-            matches[i].trainIdx >= 0 && matches[i].trainIdx < static_cast<int>(keypoints2.size())) {
-            if (valid_idx < last_result_.inlier_mask.size() && last_result_.inlier_mask[valid_idx]) {
-                inlier_matches.push_back(matches[i]);
-            }
-            valid_idx++;
+    for (size_t i = 0; i < matches.size() && i < static_cast<size_t>(inlier_mask.rows); i++) {
+        if (inlier_mask.at<uchar>(i)) {
+            inlier_matches.push_back(matches[i]);
         }
     }
-    
-    return last_result_.homography;
+
+    std::cout << "RANSAC found " << inlier_matches.size() << " inliers ("
+              << (100.0 * inlier_matches.size() / matches.size()) << "%)\n";
+
+    last_result_.homography = homography;
+    last_result_.num_inliers = inlier_matches.size();
+    last_result_.inlier_ratio = static_cast<double>(inlier_matches.size()) / matches.size();
+
+    return homography;
 }
 
 

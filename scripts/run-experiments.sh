@@ -109,14 +109,14 @@ print_header "STEP 4: RUNNING EXPERIMENTS"
 
 echo ""
 echo "This will test:"
-echo "  • 2 detectors (ORB, AKAZE)"
+echo "  • 3 detectors (ORB, AKAZE, SIFT)"
 echo "  • 3 scenes (indoor, outdoor1, outdoor2)"
 echo "  • All image pairs (1-2, 2-3, 1-3)"
 echo "  • 5 RANSAC thresholds (1.0 to 5.0)"
 echo "  • 3 blending modes (simple, feather, multiband)"
 echo "  • Multi-image stitching (all 3 images)"
 echo ""
-echo "Total: ~48 experiments"
+echo "Total: ~60 experiments"
 echo ""
 
 # Initialize counters
@@ -138,7 +138,7 @@ run_experiment() {
     TOTAL=$((TOTAL + 1))
     
     # Show progress
-    echo -ne "\r[${TOTAL}/48] Testing: ${label}...                    "
+    echo -ne "\r[${TOTAL}/60] Testing: ${label}...                    "
     
     # Run experiment and capture output for metrics
     local exp_output=$(./scripts/run_panorama.sh --stitch "$img1" "$img2" \
@@ -201,7 +201,7 @@ run_multi_experiment() {
     
     TOTAL=$((TOTAL + 1))
     
-    echo -ne "\r[${TOTAL}/48] Testing: ${label}...                    "
+    echo -ne "\r[${TOTAL}/60] Testing: ${label}...                    "
     
     # Run experiment and capture output
     local exp_output=$(./scripts/run_panorama.sh --stitch-multiple "$img1" "$img2" "$img3" \
@@ -224,7 +224,7 @@ declare -a scenes=("indoor_scene" "outdoor_scene1" "outdoor_scene2")
 # Part 1: Detector comparison (all image pairs)
 echo -e "${MAGENTA}Running detector comparison...${NC}"
 for scene in "${scenes[@]}"; do
-    for detector in orb akaze; do
+    for detector in orb akaze sift; do
         run_experiment "$scene" \
             "datasets/$scene/img1.jpg" "datasets/$scene/img2.jpg" \
             "$detector" 3.0 feather \
@@ -272,7 +272,7 @@ done
 # Part 4: Multi-image stitching
 echo -e "\n${MAGENTA}Running multi-image stitching...${NC}"
 for scene in "${scenes[@]}"; do
-    for detector in orb akaze; do
+    for detector in orb akaze sift; do
         run_multi_experiment "$scene" \
             "datasets/$scene/img1.jpg" \
             "datasets/$scene/img2.jpg" \

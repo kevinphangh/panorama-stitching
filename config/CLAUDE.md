@@ -26,7 +26,7 @@ make -j$(nproc)
 # Quick test with sample images
 make test               # Runs a simple ORB test on indoor scene
 
-# Full experiment suite (48 experiments)
+# Full experiment suite (60 experiments)
 make run                # Runs all experiments via scripts/run-experiments.sh
 
 # Single panorama with custom parameters
@@ -56,7 +56,7 @@ make serve              # Start HTTP server on port 8000
 
 ### Core Pipeline Flow
 The stitching pipeline (src/pipeline/stitching_pipeline.cpp) orchestrates:
-1. **Feature Detection** → Factory pattern creates ORB/AKAZE detectors
+1. **Feature Detection** → Factory pattern creates ORB/AKAZE/SIFT detectors
 2. **Feature Matching** → BFMatcher with ratio test filtering
 3. **RANSAC Homography** → Robust homography estimation with configurable thresholds
 4. **Image Warping** → Projects images to panorama coordinate system
@@ -65,7 +65,7 @@ The stitching pipeline (src/pipeline/stitching_pipeline.cpp) orchestrates:
 ### Key Design Patterns
 
 **Factory Pattern**: Used for detector and blender creation
-- `detector_factory.cpp`: Creates ORB or AKAZE detectors based on string parameter
+- `detector_factory.cpp`: Creates ORB, AKAZE, or SIFT detectors based on string parameter
 - `blender_factory.cpp`: Creates appropriate blender (simple, feathering, multiband)
 
 **Strategy Pattern**: Different blending strategies inherit from base `Blender` class
@@ -121,7 +121,7 @@ No formal unit test framework is currently implemented. Testing is done through:
 
 ### Integration Testing
 Full pipeline testing via `make run` which tests:
-- 2 detectors (ORB, AKAZE)
+- 3 detectors (ORB, AKAZE, SIFT)
 - 3 scenes (indoor, outdoor1, outdoor2)
 - 5 RANSAC thresholds (1.0-5.0)
 - 3 blending modes (simple, feather, multiband)
