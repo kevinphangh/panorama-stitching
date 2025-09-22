@@ -88,7 +88,7 @@ assignment_1/
 ├── results/               # Output panoramas and metrics
 ├── results_analysis/      # Analysis reports and charts
 ├── build/                 # Compiled binaries
-├── run.sh                # Main runner script
+├── Makefile              # Build and run automation
 ├── CMakeLists.txt        # Build configuration
 ├── README.md             # Project documentation
 ├── Panorama_Stitching_Report.pdf  # Assignment report
@@ -99,7 +99,7 @@ assignment_1/
 
 1. **Quick Test**:
    ```bash
-   ./run.sh
+   make run  # Runs all 48 experiments
    # Select option 2 for quick demo
    ```
 

@@ -174,14 +174,14 @@ def create_metrics_analysis(df, output_dir):
         return None
 
     # 1. Keypoints comparison by detector
-    if 'detector' in df.columns and 'num_keypoints_1' in df.columns:
-        detector_keypoints = successful_df.groupby('detector')[['num_keypoints_1', 'num_keypoints_2']].mean()
+    if 'detector' in df.columns and 'keypoints1' in df.columns:
+        detector_keypoints = successful_df.groupby('detector')[['keypoints1', 'keypoints2']].mean()
         x = np.arange(len(detector_keypoints))
         width = 0.35
 
-        bars1 = axes[0].bar(x - width/2, detector_keypoints['num_keypoints_1'], width,
+        bars1 = axes[0].bar(x - width/2, detector_keypoints['keypoints1'], width,
                            label='Image 1', color='#FF6B6B')
-        bars2 = axes[0].bar(x + width/2, detector_keypoints['num_keypoints_2'], width,
+        bars2 = axes[0].bar(x + width/2, detector_keypoints['keypoints2'], width,
                            label='Image 2', color='#4ECDC4')
 
         axes[0].set_xlabel('Detector')
@@ -200,14 +200,14 @@ def create_metrics_analysis(df, output_dir):
                            f'{int(height):,}', ha='center', va='bottom', fontsize=9)
 
     # 2. Matches and Inliers by detector
-    if 'detector' in df.columns and 'num_matches' in df.columns:
-        detector_matches = successful_df.groupby('detector')[['num_matches', 'num_inliers']].mean()
+    if 'detector' in df.columns and 'matches' in df.columns:
+        detector_matches = successful_df.groupby('detector')[['matches', 'inliers']].mean()
         x = np.arange(len(detector_matches))
         width = 0.35
 
-        bars1 = axes[1].bar(x - width/2, detector_matches['num_matches'], width,
+        bars1 = axes[1].bar(x - width/2, detector_matches['matches'], width,
                            label='Initial Matches', color='#FFD93D')
-        bars2 = axes[1].bar(x + width/2, detector_matches['num_inliers'], width,
+        bars2 = axes[1].bar(x + width/2, detector_matches['inliers'], width,
                            label='RANSAC Inliers', color='#6BCB77')
 
         axes[1].set_xlabel('Detector')

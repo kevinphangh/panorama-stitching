@@ -28,7 +28,6 @@ make test               # Runs a simple ORB test on indoor scene
 
 # Full experiment suite (48 experiments)
 make run                # Runs all experiments via scripts/run-experiments.sh
-./run.sh                # Interactive menu for building and running
 
 # Single panorama with custom parameters
 ./scripts/run_panorama.sh --stitch img1.jpg img2.jpg \
