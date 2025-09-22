@@ -47,7 +47,6 @@ private:
     double confidence_ = 0.995;
     int max_iterations_ = 2000;
     
-    // Use OpenCV's findHomography for consistency
     cv::Mat computeHomographyMinimal(const std::vector<cv::Point2f>& pts1, 
                                      const std::vector<cv::Point2f>& pts2);
     

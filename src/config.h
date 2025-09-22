@@ -24,7 +24,7 @@ namespace PanoramaConfig {
     constexpr double MAX_RANSAC_THRESHOLD = 50.0;      // Very permissive
     constexpr double DEFAULT_RANSAC_CONFIDENCE = 0.995; // 99.5% confidence we found the right transformation
     constexpr int DEFAULT_RANSAC_MAX_ITERATIONS = 2000; // Max attempts to find good model
-    constexpr int MIN_INLIERS_REQUIRED = 20;           // Need at least this many good matches
+    constexpr int MIN_INLIERS_REQUIRED = 10;           // Need at least this many good matches
     
     // Panorama Size Limits
     constexpr int MAX_PANORAMA_DIMENSION = 15000;  // Increased for legitimate large panoramas

@@ -9,13 +9,11 @@
 
 class Visualization {
 public:
-    // Generate histogram of match distances
     static cv::Mat generateMatchDistanceHistogram(
         const std::vector<double>& distances,
         const std::string& title = "Match Distance Distribution"
     );
     
-    // Plot experiment metrics
     static cv::Mat plotMetrics(
         const std::vector<double>& x_values,
         const std::vector<double>& y_values,
@@ -24,7 +22,6 @@ public:
         const std::string& title
     );
     
-    // Generate comparison bar chart
     static cv::Mat generateComparisonChart(
         const std::vector<std::string>& labels,
         const std::vector<double>& values,
@@ -32,13 +29,11 @@ public:
         const std::string& y_label
     );
     
-    // Save visualization to file
     static bool saveVisualization(
         const cv::Mat& visualization,
         const std::string& filepath
     );
     
-    // Generate experiment report with all visualizations
     static void generateExperimentReport(
         const std::string& csv_path,
         const std::string& output_dir

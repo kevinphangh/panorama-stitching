@@ -93,13 +93,6 @@ cv::Mat Blender::featherBlend(const cv::Mat& img1, const cv::Mat& img2,
 cv::Mat Blender::multibandBlend(const cv::Mat& img1, const cv::Mat& img2,
                                const cv::Mat& mask1, const cv::Mat& mask2,
                                int num_bands) {
-    // Laplacian pyramid blending: low frequencies blend smoothly, high frequencies preserve details
-    //
-    // Algorithm:
-    // 1. Build Laplacian pyramids for both images (frequency decomposition)
-    // 2. Build Gaussian pyramids for masks (smooth blending weights)
-    // 3. Blend each pyramid level using corresponding mask weights
-    // 4. Reconstruct the final image from the blended pyramid
     
     if (img1.size() != img2.size() || img1.type() != img2.type()) {
         std::cerr << "Error: Images must have same size and type for blending\n";
@@ -127,7 +120,6 @@ cv::Mat Blender::multibandBlend(const cv::Mat& img1, const cv::Mat& img2,
         mask_pyramid1[i].convertTo(mask1_float, CV_32F, 1.0/255.0);
         mask_pyramid2[i].convertTo(mask2_float, CV_32F, 1.0/255.0);
         
-        // Normalize mask weights to sum to 1.0
         cv::Mat mask_sum = mask1_float + mask2_float;
         cv::Mat zero_mask = (mask_sum == 0);
         zero_mask.convertTo(zero_mask, CV_32F, 1.0/255.0);

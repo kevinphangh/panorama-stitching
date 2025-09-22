@@ -80,7 +80,7 @@ cv::Rect HomographyEstimator::calculateOutputBounds(
     all_corners.push_back(cv::Point2f(0, static_cast<float>(img1.rows)));
     all_corners.insert(all_corners.end(), corners2_transformed.begin(), corners2_transformed.end());
     
-    float min_x = 0;  // Start from 0 to ensure first image is included
+    float min_x = 0;
     float max_x = static_cast<float>(img1.cols);
     float min_y = 0;
     float max_y = static_cast<float>(img1.rows);

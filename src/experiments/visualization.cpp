@@ -86,7 +86,6 @@ cv::Mat Visualization::plotMetrics(
     double y_min = *std::min_element(y_values.begin(), y_values.end());
     double y_max = *std::max_element(y_values.begin(), y_values.end());
     
-    // Add 10% padding to prevent data points from touching axes
     double x_range = x_max - x_min;
     double y_range = y_max - y_min;
     if (x_range == 0) x_range = 1;
@@ -97,7 +96,6 @@ cv::Mat Visualization::plotMetrics(
     y_min -= y_range * 0.1;
     y_max += y_range * 0.1;
     
-    // Transform data from value space to pixel coordinates (y-axis inverted for display)
     std::vector<cv::Point2f> points;
     for (size_t i = 0; i < x_values.size(); ++i) {
         float px = margin + (x_values[i] - x_min) / (x_max - x_min) * (plot_w - 2*margin);
@@ -144,7 +142,6 @@ cv::Mat Visualization::plotMetrics(
                 cv::Point(plot_w/2 - x_label.length()*4, plot_h - 20),
                 cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 0, 0), 1);
     
-    // Y-axis label (OpenCV doesn't support rotated text, so approximating with horizontal)
     cv::putText(plot_image, y_label, 
                 cv::Point(15, plot_h/2),
                 cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 0, 0), 1);
@@ -254,7 +251,6 @@ cv::Mat Visualization::drawHistogram(
     int bin_w = cvRound((double) hist_w / bin_count);
     int margin = 40;
     
-    // Scale histogram values to fit in display area
     std::vector<int> normalized_hist(bin_count);
     for (int i = 0; i < bin_count; ++i) {
         normalized_hist[i] = cvRound((double)histogram[i] / max_value * (hist_h - margin));
@@ -323,7 +319,6 @@ void Visualization::generateExperimentReport(
         std::getline(ss, thresh_str, ',');
         std::getline(ss, blend_mode, ',');
         
-        // Skip to relevant fields
         std::string temp;
         for (int i = 0; i < 4; ++i) std::getline(ss, temp, ',');
         ss >> num_inliers;
@@ -356,7 +351,6 @@ void Visualization::generateExperimentReport(
     
     std::cout << "Generating experiment visualizations...\n";
     
-    // 1. Detector comparison chart
     if (!orb_times.empty() && !akaze_times.empty()) {
         std::vector<std::string> detector_labels = {"ORB", "AKAZE"};
         std::vector<double> avg_times = {
@@ -371,7 +365,6 @@ void Visualization::generateExperimentReport(
         );
         saveVisualization(detector_chart, output_dir + "/detector_comparison.jpg");
         
-        // Inlier comparison
         std::vector<double> avg_inliers = {
             std::accumulate(orb_inliers.begin(), orb_inliers.end(), 0.0) / orb_inliers.size(),
             std::accumulate(akaze_inliers.begin(), akaze_inliers.end(), 0.0) / akaze_inliers.size()
@@ -385,7 +378,6 @@ void Visualization::generateExperimentReport(
         saveVisualization(inlier_chart, output_dir + "/inlier_comparison.jpg");
     }
     
-    // 2. RANSAC threshold plot
     if (!thresholds.empty() && !threshold_inliers.empty()) {
         cv::Mat threshold_plot = plotMetrics(
             thresholds, threshold_inliers,
@@ -396,7 +388,6 @@ void Visualization::generateExperimentReport(
         saveVisualization(threshold_plot, output_dir + "/ransac_threshold_plot.jpg");
     }
     
-    // 3. Blending method comparison
     if (!blend_times.empty()) {
         std::vector<std::string> blend_labels;
         std::vector<double> blend_values;

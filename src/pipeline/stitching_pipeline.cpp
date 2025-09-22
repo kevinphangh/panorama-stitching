@@ -104,7 +104,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
     int img1_pixels = img1.rows * img1.cols;
     int img2_pixels = img2.rows * img2.cols;
 
-    // Larger panoramas need proportionally more features for robust matching
     int adaptive_features1 = calculateAdaptiveFeatures(img1_pixels, max_features);
     int adaptive_features2 = calculateAdaptiveFeatures(img2_pixels, max_features);
 
@@ -136,7 +135,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
             fs::create_directories(viz_dir);
         }
 
-        // Generate a unique base name using timestamp
         static int viz_counter = 0;
         viz_counter++;
         std::string base_name = "stitch_" + std::to_string(viz_counter) + "_" + detector_type;
@@ -171,8 +169,7 @@ cv::Mat StitchingPipeline::performStitchingDirect(
             fs::create_directories(viz_dir);
         }
 
-        // Use the same counter as keypoints for consistent naming
-        static int match_counter = 0;
+            static int match_counter = 0;
         match_counter++;
         std::string base_name = "stitch_" + std::to_string(match_counter) + "_" + detector_type;
 
@@ -209,8 +206,7 @@ cv::Mat StitchingPipeline::performStitchingDirect(
             fs::create_directories(viz_dir);
         }
 
-        // Use the same counter for consistent naming across all visualizations
-        static int inlier_counter = 0;
+            static int inlier_counter = 0;
         inlier_counter++;
         std::string base_name = "stitch_" + std::to_string(inlier_counter) + "_" + detector_type;
 
@@ -303,7 +299,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
     std::cout << "Warping images...\n";
     ImageWarper warper;
 
-    // CRITICAL: homography maps img1 -> img2, but we need img2 -> img1 for warping
     cv::Mat H_inv;
     try {
         H_inv = homography.inv();
@@ -399,7 +394,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
 
     std::cout << "Panorama created successfully!\n";
 
-    // Output total processing time for metrics tracking
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
     std::cout << "Total time: " << duration.count() << " ms\n";
@@ -422,10 +416,39 @@ cv::Mat StitchingPipeline::performSequentialStitching(
         return cv::Mat();
     }
 
-    cv::Mat panorama = images[0].clone();
+    if (images.size() == 1) {
+        return images[0].clone();
+    }
 
-    for (size_t i = 1; i < images.size(); i++) {
-        std::cout << "\n=== Stitching image " << (i + 1) << " of " << images.size() << " ===\n";
+    size_t middle_idx = images.size() / 2;
+    std::cout << "Starting from image " << (middle_idx + 1) << " as reference\n";
+
+    cv::Mat panorama = images[middle_idx].clone();
+
+    for (int i = middle_idx - 1; i >= 0; i--) {
+        std::cout << "\n=== Stitching image " << (i + 1) << " (left side) ===\n";
+
+        cv::Mat result = performStitchingDirect(
+            images[i], panorama,  // Note: reversed order for left side
+            detector_type, blend_mode,
+            ransac_threshold, max_features,
+            visualize, PanoramaConfig::MAX_PANORAMA_DIMENSION
+        );
+
+        if (result.empty()) {
+            std::cerr << "Failed to stitch image " << (i + 1) << "\n";
+            if (i == 0 && middle_idx + 1 < images.size()) {
+                std::cerr << "Continuing with right side images...\n";
+                panorama = images[middle_idx].clone();  // Reset to middle
+                break;
+            }
+            return cv::Mat();
+        }
+        panorama = result;
+    }
+
+    for (size_t i = middle_idx + 1; i < images.size(); i++) {
+        std::cout << "\n=== Stitching image " << (i + 1) << " (right side) ===\n";
 
         cv::Mat result = performStitchingDirect(
             panorama, images[i],
@@ -436,9 +459,12 @@ cv::Mat StitchingPipeline::performSequentialStitching(
 
         if (result.empty()) {
             std::cerr << "Failed to stitch image " << (i + 1) << "\n";
+            if (i == images.size() - 1) {
+                std::cerr << "Returning partial panorama...\n";
+                return panorama;  // Return what we have so far
+            }
             return cv::Mat();
         }
-
         panorama = result;
     }
 

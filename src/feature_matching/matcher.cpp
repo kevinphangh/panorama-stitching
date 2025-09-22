@@ -58,10 +58,9 @@ MatchingResult FeatureMatcher::matchFeatures(
     result.good_matches = ratioTest(knn_matches, ratio_threshold);
     end = std::chrono::high_resolution_clock::now();
     result.filtering_time_ms = std::chrono::duration<double, std::milli>(end - start).count();
-    
+
     result.num_good_matches = result.good_matches.size();
-    
-    // Store match distances for histogram generation
+
     result.match_distances.clear();
     for (const auto& match : result.good_matches) {
         result.match_distances.push_back(match.distance);

@@ -18,13 +18,11 @@ struct ExperimentConfig {
 struct ExperimentResult {
     ExperimentConfig config;
     
-    // Feature detection metrics
     int num_keypoints_img1;
     int num_keypoints_img2;
     double detection_time_ms;
     double description_time_ms;
     
-    // Matching metrics
     int num_initial_matches;
     int num_good_matches;
     int num_inliers;
@@ -32,12 +30,10 @@ struct ExperimentResult {
     double matching_time_ms;
     std::vector<double> match_distances;
     
-    // Homography metrics
     double homography_time_ms;
     double reprojection_error;
     int ransac_iterations;
     
-    // Stitching metrics
     double warping_time_ms;
     double blending_time_ms;
     double total_time_ms;

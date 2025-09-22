@@ -6,8 +6,7 @@ ORBDetector::ORBDetector() {
 }
 
 void ORBDetector::createDetector() {
-    // ORB will detect UP TO max_features, but may find fewer if image lacks sufficient features
-    detector_ = cv::ORB::create(max_features_, 1.2f, 8, 31, 0, 2, 
+    detector_ = cv::ORB::create(max_features_, 1.2f, 8, 31, 0, 2,
                                cv::ORB::HARRIS_SCORE, 31, 20);
 }
 

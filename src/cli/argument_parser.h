@@ -44,7 +44,6 @@ public:
                         int max_val = std::numeric_limits<int>::max());
 };
 
-// Template implementation
 template<typename T>
 bool ArgumentParser::parseArgument(const std::string& arg, T& value, const std::string& param_name) {
     std::istringstream iss(arg);

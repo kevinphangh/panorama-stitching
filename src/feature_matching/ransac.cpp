@@ -116,7 +116,6 @@ cv::Mat RANSAC::computeHomographyMinimal(const std::vector<cv::Point2f>& pts1,
         return cv::Mat();
     }
     
-    // method=0: least squares for minimal 4-point set
     cv::Mat H = cv::findHomography(pts1, pts2, 0);
     
     if (H.empty()) {
@@ -153,7 +152,6 @@ std::vector<bool> RANSAC::findInliers(const cv::Mat& H,
 
         double w = pt2_est.at<double>(2);
         if (std::abs(w) < 1e-10) {
-            // Point at infinity, mark as outlier
             mask[i] = false;
             continue;
         }
@@ -192,7 +190,6 @@ double RANSAC::computeReprojectionError(
 
         double w = pt2_est.at<double>(2);
         if (std::abs(w) < 1e-10) {
-            // Skip points at infinity
             continue;
         }
 
