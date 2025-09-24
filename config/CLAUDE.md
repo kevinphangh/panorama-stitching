@@ -39,17 +39,16 @@ make run                # Runs all experiments via scripts/run-experiments.sh
 
 ### Analyzing Results
 ```bash
-make analyze            # Basic analysis
-make analyze-full       # Full analysis with enhanced organization
+make analyze            # Run analysis and organize results
 make report             # Generate PDF report
 python3 scripts/analysis_pipeline.py  # Direct analysis script
 ```
 
 ### Viewing Results
 ```bash
-make view               # Opens interactive result viewer
-make serve              # Start HTTP server on port 8000
-./view-results.sh       # Interactive viewer with multiple options
+make analyze            # Run analysis and organize results
+ls results/             # View raw panorama outputs
+ls results_analysis/    # View organized results and metrics
 ```
 
 ## Code Architecture
@@ -100,7 +99,7 @@ The experiment runner (`src/experiments/experiment_runner.cpp`) provides:
 - Automated testing across multiple parameter combinations
 - CSV metrics collection (keypoints, matches, inliers, ratios)
 - Visualization generation (keypoints, matches, inlier filtering)
-- HTML report generation with comparative analysis
+- Result organization by scene and experiment type
 
 ### Python Analysis Pipeline
 
@@ -108,7 +107,6 @@ The experiment runner (`src/experiments/experiment_runner.cpp`) provides:
 - CSV format normalization from C++ output
 - Statistical analysis of experiment results
 - Matplotlib visualization generation
-- HTML report creation with interactive navigation
 - Result organization by scene and parameter
 
 ## Testing Approach

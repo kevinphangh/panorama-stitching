@@ -13,7 +13,6 @@
 #    1. Builds the C++ project                                              #
 #    2. Runs ALL experiments on ALL scenes                                  #
 #    3. Analyzes and organizes results                                      #
-#    4. Creates visual comparison HTML pages                                #
 #                                                                             #
 ###############################################################################
 
@@ -313,16 +312,17 @@ echo "  • Failed stitches: $FAILED"
 echo "  • Success rate: $((SUCCESS * 100 / TOTAL))%"
 echo ""
 echo -e "${GREEN}Generated outputs:${NC}"
-echo "  • results/           - Raw experiment outputs"
-echo "  • results_analysis/  - Organized results with HTML viewer"
+echo "  • results/           - Raw experiment outputs and panoramas"
+echo "  • results_analysis/  - Organized results with metrics analysis"
 echo ""
 echo -e "${YELLOW}To view results:${NC}"
-echo "  Run: ./view-results.sh"
-echo "  (Provides 4 viewing options including VSCode and Python server)"
+echo "  • Panoramas: results/*.jpg"
+echo "  • Metrics chart: results_analysis/metrics_analysis.png"
+echo "  • CSV data: results/metrics.csv"
 echo ""
 echo -e "${BLUE}For the report:${NC}"
 echo "  • All quantitative data is in results_analysis/"
-echo "  • Screenshots can be taken from the HTML pages"
+echo "  • Visualizations are in results_analysis/visualizations/"
 echo "  • Raw data is in results/ if needed"
 echo ""
 

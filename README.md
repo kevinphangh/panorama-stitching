@@ -17,26 +17,29 @@ make build
 # Quick test
 make test
 
-# Full experiments (48 tests)
+# Full experiments (60 tests with SIFT)
 make run
 
 # Custom panorama
 ./scripts/run_panorama.sh --stitch img1.jpg img2.jpg --output result.jpg
 
 # Options
---detector [orb|akaze]
+--detector [orb|akaze|sift]
 --ransac-threshold [1.0-5.0]
 --blend-mode [simple|feather|multiband]
 ```
 
 ## View Results
 
-```bash
-make view                               # Interactive viewer
-make serve                              # HTTP server (localhost:8000)
-firefox results_analysis/analysis_report.html    # Direct access
-```
+Results are saved in:
+- `results/` - Raw outputs, panoramas and metrics.csv
+- `results_analysis/` - Organized results with metrics analysis chart
 
-Results are in:
-- `results/` - Raw outputs and metrics.csv
-- `results_analysis/` - Organized analysis with charts
+```bash
+# Analyze results
+make analyze
+
+# View metrics chart
+open results_analysis/metrics_analysis.png      # macOS
+xdg-open results_analysis/metrics_analysis.png  # Linux
+```

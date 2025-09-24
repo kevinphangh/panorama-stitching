@@ -68,10 +68,10 @@ This document consolidates all information related to the Visual Computing Assig
   - Discussion and recommendations
   - 3-4 pages as required
 
-- [x] **HTML Analysis** (`results_analysis/analysis_report.html`)
-  - Interactive charts and metrics
-  - Visual comparison of results
-  - Detailed statistics
+- [x] **Metrics Analysis** (`results_analysis/metrics_analysis.png`)
+  - Charts showing detector performance
+  - RANSAC threshold impact
+  - Success rates by scene
 
 #### 2.7 Deliverables
 - [x] **Source Code**: Complete C++ implementation with CMakeLists.txt
@@ -99,7 +99,7 @@ assignment_1/
 
 1. **Quick Test**:
    ```bash
-   make run  # Runs all 48 experiments
+   make run  # Runs all 60 experiments (includes SIFT)
    # Select option 2 for quick demo
    ```
 
@@ -110,8 +110,9 @@ assignment_1/
 
 3. **View Results**:
    ```bash
-   # Open in browser
-   results_analysis/analysis_report.html
+   # View metrics chart
+   open results_analysis/metrics_analysis.png  # macOS
+   xdg-open results_analysis/metrics_analysis.png  # Linux
    ```
 
 4. **Read Report**:
@@ -307,8 +308,8 @@ ls datasets/*/
 # 6. Show multi-image stitching
 ./scripts/run_panorama.sh --stitch datasets/outdoor_scene1/img1.jpg datasets/outdoor_scene1/img2.jpg datasets/outdoor_scene1/img3.jpg --output multi_demo.jpg
 
-# 7. Show the analysis report
-# Open results_analysis/analysis_report.html in browser
+# 7. Show the analysis results
+# View metrics at results_analysis/metrics_analysis.png
 ```
 
 ### 4.3 Recording Tools
@@ -409,4 +410,4 @@ This implementation provides a complete panorama stitching pipeline with extensi
 
 ---
 
-*This documentation consolidates the complete Visual Computing Assignment 1 panorama stitching project information. For specific implementation details, refer to the source code in the `src/` directory. For experimental results and analysis, see the generated PDF report and HTML analysis files.*
+*This documentation consolidates the complete Visual Computing Assignment 1 panorama stitching project information. For specific implementation details, refer to the source code in the `src/` directory. For experimental results and analysis, see the generated PDF report and metrics analysis.*
