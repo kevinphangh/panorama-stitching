@@ -186,9 +186,9 @@ cv::Mat StitchingPipeline::performStitchingDirect(
                        std::vector<char>(),
                        cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
-        std::string matches_before_path = viz_dir + "/" + base_name + "_matches_before.jpg";
+        std::string matches_before_path = viz_dir + "/" + base_name + "_matches_before_ransac.jpg";
         cv::imwrite(matches_before_path, match_vis_before);
-        std::cout << "Saved initial matches visualization\n";
+        std::cout << "Saved matches visualization (before RANSAC)\n";
     }
 
     std::cout << "Estimating homography...\n";
@@ -221,9 +221,9 @@ cv::Mat StitchingPipeline::performStitchingDirect(
                        std::vector<char>(),
                        cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 
-        std::string matches_after_path = viz_dir + "/" + base_name + "_matches_after.jpg";
+        std::string matches_after_path = viz_dir + "/" + base_name + "_matches_after_ransac.jpg";
         cv::imwrite(matches_after_path, match_vis_after);
-        std::cout << "Saved inlier matches visualization\n";
+        std::cout << "Saved inlier matches visualization (after RANSAC)\n";
     }
 
     if (homography.empty()) {

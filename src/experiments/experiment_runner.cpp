@@ -201,7 +201,7 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
                    match_result.good_matches, match_vis, cv::Scalar(0, 255, 0),
                    cv::Scalar(255, 0, 0), std::vector<char>(),
                    cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-    cv::imwrite(viz_dir + "/" + exp_name + "_matches_before.jpg", match_vis);
+    cv::imwrite(viz_dir + "/" + exp_name + "_matches_before_ransac.jpg", match_vis);
     
     auto h_start = std::chrono::high_resolution_clock::now();
     HomographyEstimator h_estimator;
@@ -227,7 +227,7 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
                        inlier_matches, inlier_vis, cv::Scalar(0, 255, 0),
                        cv::Scalar(255, 0, 0), std::vector<char>(),
                        cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-        cv::imwrite(viz_dir + "/" + exp_name + "_matches_after.jpg", inlier_vis);
+        cv::imwrite(viz_dir + "/" + exp_name + "_matches_after_ransac.jpg", inlier_vis);
     }
     
     if (!homography.empty()) {
