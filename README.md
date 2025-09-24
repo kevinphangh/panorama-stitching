@@ -17,17 +17,8 @@ make build
 # Quick test
 make test
 
-# Full experiments (60 tests with SIFT)
+# Full experiments (60 tests)
 make run
-
-# Custom panorama
-./scripts/run_panorama.sh --stitch img1.jpg img2.jpg --output result.jpg
-
-# Options
---detector [orb|akaze|sift]
---ransac-threshold [1.0-5.0]
---blend-mode [simple|feather|multiband]
-```
 
 ## View Results
 
@@ -38,8 +29,4 @@ Results are saved in:
 ```bash
 # Analyze results
 make analyze
-
-# View metrics chart
-open results_analysis/metrics_analysis.png      # macOS
-xdg-open results_analysis/metrics_analysis.png  # Linux
 ```
