@@ -180,6 +180,11 @@ ExperimentResult ExperimentRunner::runSingleExperiment(
     cv::imwrite(viz_dir + "/" + exp_name + "_keypoints2.jpg", kp_vis2);
     
     FeatureMatcher matcher;
+    if (config.detector_type == "sift") {
+        matcher.setMatcherType("BruteForce-L2");
+    } else {
+        matcher.setMatcherType("BruteForce-Hamming");
+    }
     auto match_result = matcher.matchFeatures(
         det_result1.descriptors, det_result2.descriptors,
         det_result1.keypoints, det_result2.keypoints,

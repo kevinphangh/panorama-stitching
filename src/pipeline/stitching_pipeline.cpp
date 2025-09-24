@@ -157,8 +157,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
     FeatureMatcher matcher;
     if (detector_type == "sift") {
         matcher.setMatcherType("BruteForce-L2");
-    } else if (detector_type == "akaze") {
-        matcher.setMatcherType("BruteForce-L2");
     } else {
         matcher.setMatcherType("BruteForce-Hamming");
     }
@@ -204,8 +202,6 @@ cv::Mat StitchingPipeline::performStitchingDirect(
     );
 
     auto ransac_result = h_estimator.getLastResult();
-    std::cout << "RANSAC found " << ransac_result.num_inliers
-              << " inliers (" << ransac_result.inlier_ratio * 100 << "%)\n";
 
     if (!inlier_matches.empty()) {
         namespace fs = std::filesystem;

@@ -1,143 +1,57 @@
 experiment,scene,images,detector,threshold,blend_mode,keypoints1,keypoints2,matches,inliers,inlier_ratio,status
-indoor_scene pair(1-2) orb,indoor_scene,img1.jpg-img2.jpg,orb,3.0,feather,3885,5000,116,16
-16,13.7931
-13.7931,SUCCESS
-indoor_scene pair(2-3) orb,indoor_scene,img2.jpg-img3.jpg,orb,3.0,feather,5000,4681,159,42
-42,26.4151
-26.4151,SUCCESS
-indoor_scene pair(1-3) orb,indoor_scene,img1.jpg-img3.jpg,orb,3.0,feather,3885,4681,40,34
-34,85
-85,SUCCESS
-indoor_scene pair(1-2) akaze,indoor_scene,img1.jpg-img2.jpg,akaze,3.0,feather,918,2428,43,12
-12,27.907
-27.907,SUCCESS
-indoor_scene pair(2-3) akaze,indoor_scene,img2.jpg-img3.jpg,akaze,3.0,feather,2428,1315,85,23
-23,27.0588
-27.0588,SUCCESS
-indoor_scene pair(1-3) akaze,indoor_scene,img1.jpg-img3.jpg,akaze,3.0,feather,918,1315,6,0,0,FAILED
+indoor_scene pair(1-2) orb,indoor_scene,img1.jpg-img2.jpg,orb,3.0,feather,3885,5000,116,16,13.7931,SUCCESS
+indoor_scene pair(2-3) orb,indoor_scene,img2.jpg-img3.jpg,orb,3.0,feather,5000,4681,159,42,26.4151,SUCCESS
+indoor_scene pair(1-3) orb,indoor_scene,img1.jpg-img3.jpg,orb,3.0,feather,3885,4681,40,34,85,SUCCESS
+indoor_scene pair(1-2) akaze,indoor_scene,img1.jpg-img2.jpg,akaze,3.0,feather,4790,5000,219,24,10.9589,SUCCESS
+indoor_scene pair(2-3) akaze,indoor_scene,img2.jpg-img3.jpg,akaze,3.0,feather,5000,3183,350,70,20,SUCCESS
+indoor_scene pair(1-3) akaze,indoor_scene,img1.jpg-img3.jpg,akaze,3.0,feather,4790,3183,55,0,0,FAILED
 indoor_scene pair(1-2) sift,indoor_scene,img1.jpg-img2.jpg,sift,3.0,feather,5001,5001,123,0,0,FAILED
-indoor_scene pair(2-3) sift,indoor_scene,img2.jpg-img3.jpg,sift,3.0,feather,5001,3005,95,11
-11,11.5789
-11.5789,SUCCESS
+indoor_scene pair(2-3) sift,indoor_scene,img2.jpg-img3.jpg,sift,3.0,feather,5001,3005,95,11,11.5789,SUCCESS
 indoor_scene pair(1-3) sift,indoor_scene,img1.jpg-img3.jpg,sift,3.0,feather,5001,3005,95,0,0,FAILED
-outdoor_scene1 pair(1-2) orb,outdoor_scene1,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,156,67
-67,42.9487
-42.9487,SUCCESS
-outdoor_scene1 pair(2-3) orb,outdoor_scene1,img2.jpg-img3.jpg,orb,3.0,feather,5000,5000,267,112
-112,41.9476
-41.9476,SUCCESS
+outdoor_scene1 pair(1-2) orb,outdoor_scene1,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,156,67,42.9487,SUCCESS
+outdoor_scene1 pair(2-3) orb,outdoor_scene1,img2.jpg-img3.jpg,orb,3.0,feather,5000,5000,267,112,41.9476,SUCCESS
 outdoor_scene1 pair(1-3) orb,outdoor_scene1,img1.jpg-img3.jpg,orb,3.0,feather,5000,5000,22,0,0,FAILED
-outdoor_scene1 pair(1-2) akaze,outdoor_scene1,img1.jpg-img2.jpg,akaze,3.0,feather,5000,5000,230,139
-139,60.4348
-60.4348,SUCCESS
-outdoor_scene1 pair(2-3) akaze,outdoor_scene1,img2.jpg-img3.jpg,akaze,3.0,feather,5000,4041,247,136
-136,55.0607
-55.0607,SUCCESS
-outdoor_scene1 pair(1-3) akaze,outdoor_scene1,img1.jpg-img3.jpg,akaze,3.0,feather,5000,4041,12,0,0,FAILED
-outdoor_scene1 pair(1-2) sift,outdoor_scene1,img1.jpg-img2.jpg,sift,3.0,feather,5000,5000,410,189
-189,46.0976
-46.0976,SUCCESS
-outdoor_scene1 pair(2-3) sift,outdoor_scene1,img2.jpg-img3.jpg,sift,3.0,feather,5000,5000,395,126
-126,31.8987
-31.8987,SUCCESS
+outdoor_scene1 pair(1-2) akaze,outdoor_scene1,img1.jpg-img2.jpg,akaze,3.0,feather,5000,5000,466,206,44.206,SUCCESS
+outdoor_scene1 pair(2-3) akaze,outdoor_scene1,img2.jpg-img3.jpg,akaze,3.0,feather,5000,5000,592,258,43.5811,SUCCESS
+outdoor_scene1 pair(1-3) akaze,outdoor_scene1,img1.jpg-img3.jpg,akaze,3.0,feather,5000,5000,16,0,0,FAILED
+outdoor_scene1 pair(1-2) sift,outdoor_scene1,img1.jpg-img2.jpg,sift,3.0,feather,5000,5000,410,189,46.0976,SUCCESS
+outdoor_scene1 pair(2-3) sift,outdoor_scene1,img2.jpg-img3.jpg,sift,3.0,feather,5000,5000,395,126,31.8987,SUCCESS
 outdoor_scene1 pair(1-3) sift,outdoor_scene1,img1.jpg-img3.jpg,sift,3.0,feather,5000,5000,41,0,0,FAILED
-outdoor_scene2 pair(1-2) orb,outdoor_scene2,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,81,32
-32,39.5062
-39.5062,SUCCESS
-outdoor_scene2 pair(2-3) orb,outdoor_scene2,img2.jpg-img3.jpg,orb,3.0,feather,5000,5000,565,429
-429,75.9292
-75.9292,SUCCESS
-outdoor_scene2 pair(1-3) orb,outdoor_scene2,img1.jpg-img3.jpg,orb,3.0,feather,5000,5000,11,10
-10,90.9091
-90.9091,SUCCESS
-outdoor_scene2 pair(1-2) akaze,outdoor_scene2,img1.jpg-img2.jpg,akaze,3.0,feather,5000,5000,37,18
-18,48.6486
-48.6486,SUCCESS
-outdoor_scene2 pair(2-3) akaze,outdoor_scene2,img2.jpg-img3.jpg,akaze,3.0,feather,5000,5000,344,184
-184,53.4884
-53.4884,SUCCESS
-outdoor_scene2 pair(1-3) akaze,outdoor_scene2,img1.jpg-img3.jpg,akaze,3.0,feather,5000,5000,14,0,0,FAILED
-outdoor_scene2 pair(1-2) sift,outdoor_scene2,img1.jpg-img2.jpg,sift,3.0,feather,5000,5000,135,54
-54,40
-40,SUCCESS
-outdoor_scene2 pair(2-3) sift,outdoor_scene2,img2.jpg-img3.jpg,sift,3.0,feather,5000,5000,686,456
-456,66.4723
-66.4723,SUCCESS
+outdoor_scene2 pair(1-2) orb,outdoor_scene2,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,81,32,39.5062,SUCCESS
+outdoor_scene2 pair(2-3) orb,outdoor_scene2,img2.jpg-img3.jpg,orb,3.0,feather,5000,5000,565,429,75.9292,SUCCESS
+outdoor_scene2 pair(1-3) orb,outdoor_scene2,img1.jpg-img3.jpg,orb,3.0,feather,5000,5000,11,10,90.9091,SUCCESS
+outdoor_scene2 pair(1-2) akaze,outdoor_scene2,img1.jpg-img2.jpg,akaze,3.0,feather,5000,5000,116,37,31.8966,SUCCESS
+outdoor_scene2 pair(2-3) akaze,outdoor_scene2,img2.jpg-img3.jpg,akaze,3.0,feather,5000,5000,863,448,51.9119,SUCCESS
+outdoor_scene2 pair(1-3) akaze,outdoor_scene2,img1.jpg-img3.jpg,akaze,3.0,feather,5000,5000,35,0,0,FAILED
+outdoor_scene2 pair(1-2) sift,outdoor_scene2,img1.jpg-img2.jpg,sift,3.0,feather,5000,5000,135,54,40,SUCCESS
+outdoor_scene2 pair(2-3) sift,outdoor_scene2,img2.jpg-img3.jpg,sift,3.0,feather,5000,5000,686,456,66.4723,SUCCESS
 outdoor_scene2 pair(1-3) sift,outdoor_scene2,img1.jpg-img3.jpg,sift,3.0,feather,5000,5000,54,0,0,FAILED
-indoor_scene RANSAC-1.0,indoor_scene,img1.jpg-img2.jpg,orb,1.0,feather,3885,5000,116,16
-16,13.7931
-13.7931,SUCCESS
-indoor_scene RANSAC-2.0,indoor_scene,img1.jpg-img2.jpg,orb,2.0,feather,3885,5000,116,16
-16,13.7931
-13.7931,SUCCESS
-indoor_scene RANSAC-3.0,indoor_scene,img1.jpg-img2.jpg,orb,3.0,feather,3885,5000,116,16
-16,13.7931
-13.7931,SUCCESS
-indoor_scene RANSAC-4.0,indoor_scene,img1.jpg-img2.jpg,orb,4.0,feather,3885,5000,116,16
-16,13.7931
-13.7931,SUCCESS
-indoor_scene RANSAC-5.0,indoor_scene,img1.jpg-img2.jpg,orb,5.0,feather,3885,5000,116,16
-16,13.7931
-13.7931,SUCCESS
-outdoor_scene1 RANSAC-1.0,outdoor_scene1,img1.jpg-img2.jpg,orb,1.0,feather,5000,5000,156,67
-67,42.9487
-42.9487,SUCCESS
-outdoor_scene1 RANSAC-2.0,outdoor_scene1,img1.jpg-img2.jpg,orb,2.0,feather,5000,5000,156,67
-67,42.9487
-42.9487,SUCCESS
-outdoor_scene1 RANSAC-3.0,outdoor_scene1,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,156,67
-67,42.9487
-42.9487,SUCCESS
-outdoor_scene1 RANSAC-4.0,outdoor_scene1,img1.jpg-img2.jpg,orb,4.0,feather,5000,5000,156,67
-67,42.9487
-42.9487,SUCCESS
-outdoor_scene1 RANSAC-5.0,outdoor_scene1,img1.jpg-img2.jpg,orb,5.0,feather,5000,5000,156,67
-67,42.9487
-42.9487,SUCCESS
-outdoor_scene2 RANSAC-1.0,outdoor_scene2,img1.jpg-img2.jpg,orb,1.0,feather,5000,5000,81,32
-32,39.5062
-39.5062,SUCCESS
-outdoor_scene2 RANSAC-2.0,outdoor_scene2,img1.jpg-img2.jpg,orb,2.0,feather,5000,5000,81,32
-32,39.5062
-39.5062,SUCCESS
-outdoor_scene2 RANSAC-3.0,outdoor_scene2,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,81,32
-32,39.5062
-39.5062,SUCCESS
-outdoor_scene2 RANSAC-4.0,outdoor_scene2,img1.jpg-img2.jpg,orb,4.0,feather,5000,5000,81,32
-32,39.5062
-39.5062,SUCCESS
-outdoor_scene2 RANSAC-5.0,outdoor_scene2,img1.jpg-img2.jpg,orb,5.0,feather,5000,5000,81,32
-32,39.5062
-39.5062,SUCCESS
-indoor_scene blend-simple,indoor_scene,img1.jpg-img2.jpg,orb,3.0,simple,3885,5000,116,16
-16,13.7931
-13.7931,SUCCESS
-indoor_scene blend-feather,indoor_scene,img1.jpg-img2.jpg,orb,3.0,feather,3885,5000,116,16
-16,13.7931
-13.7931,SUCCESS
-indoor_scene blend-multiband,indoor_scene,img1.jpg-img2.jpg,orb,3.0,multiband,3885,5000,116,16
-16,13.7931
-13.7931,SUCCESS
-outdoor_scene1 blend-simple,outdoor_scene1,img1.jpg-img2.jpg,orb,3.0,simple,5000,5000,156,67
-67,42.9487
-42.9487,SUCCESS
-outdoor_scene1 blend-feather,outdoor_scene1,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,156,67
-67,42.9487
-42.9487,SUCCESS
-outdoor_scene1 blend-multiband,outdoor_scene1,img1.jpg-img2.jpg,orb,3.0,multiband,5000,5000,156,67
-67,42.9487
-42.9487,SUCCESS
-outdoor_scene2 blend-simple,outdoor_scene2,img1.jpg-img2.jpg,orb,3.0,simple,5000,5000,81,32
-32,39.5062
-39.5062,SUCCESS
-outdoor_scene2 blend-feather,outdoor_scene2,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,81,32
-32,39.5062
-39.5062,SUCCESS
-outdoor_scene2 blend-multiband,outdoor_scene2,img1.jpg-img2.jpg,orb,3.0,multiband,5000,5000,81,32
-32,39.5062
-39.5062,SUCCESS
+indoor_scene RANSAC-1.0,indoor_scene,img1.jpg-img2.jpg,orb,1.0,feather,3885,5000,116,16,13.7931,SUCCESS
+indoor_scene RANSAC-2.0,indoor_scene,img1.jpg-img2.jpg,orb,2.0,feather,3885,5000,116,16,13.7931,SUCCESS
+indoor_scene RANSAC-3.0,indoor_scene,img1.jpg-img2.jpg,orb,3.0,feather,3885,5000,116,16,13.7931,SUCCESS
+indoor_scene RANSAC-4.0,indoor_scene,img1.jpg-img2.jpg,orb,4.0,feather,3885,5000,116,16,13.7931,SUCCESS
+indoor_scene RANSAC-5.0,indoor_scene,img1.jpg-img2.jpg,orb,5.0,feather,3885,5000,116,16,13.7931,SUCCESS
+outdoor_scene1 RANSAC-1.0,outdoor_scene1,img1.jpg-img2.jpg,orb,1.0,feather,5000,5000,156,67,42.9487,SUCCESS
+outdoor_scene1 RANSAC-2.0,outdoor_scene1,img1.jpg-img2.jpg,orb,2.0,feather,5000,5000,156,67,42.9487,SUCCESS
+outdoor_scene1 RANSAC-3.0,outdoor_scene1,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,156,67,42.9487,SUCCESS
+outdoor_scene1 RANSAC-4.0,outdoor_scene1,img1.jpg-img2.jpg,orb,4.0,feather,5000,5000,156,67,42.9487,SUCCESS
+outdoor_scene1 RANSAC-5.0,outdoor_scene1,img1.jpg-img2.jpg,orb,5.0,feather,5000,5000,156,67,42.9487,SUCCESS
+outdoor_scene2 RANSAC-1.0,outdoor_scene2,img1.jpg-img2.jpg,orb,1.0,feather,5000,5000,81,32,39.5062,SUCCESS
+outdoor_scene2 RANSAC-2.0,outdoor_scene2,img1.jpg-img2.jpg,orb,2.0,feather,5000,5000,81,32,39.5062,SUCCESS
+outdoor_scene2 RANSAC-3.0,outdoor_scene2,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,81,32,39.5062,SUCCESS
+outdoor_scene2 RANSAC-4.0,outdoor_scene2,img1.jpg-img2.jpg,orb,4.0,feather,5000,5000,81,32,39.5062,SUCCESS
+outdoor_scene2 RANSAC-5.0,outdoor_scene2,img1.jpg-img2.jpg,orb,5.0,feather,5000,5000,81,32,39.5062,SUCCESS
+indoor_scene blend-simple,indoor_scene,img1.jpg-img2.jpg,orb,3.0,simple,3885,5000,116,16,13.7931,SUCCESS
+indoor_scene blend-feather,indoor_scene,img1.jpg-img2.jpg,orb,3.0,feather,3885,5000,116,16,13.7931,SUCCESS
+indoor_scene blend-multiband,indoor_scene,img1.jpg-img2.jpg,orb,3.0,multiband,3885,5000,116,16,13.7931,SUCCESS
+outdoor_scene1 blend-simple,outdoor_scene1,img1.jpg-img2.jpg,orb,3.0,simple,5000,5000,156,67,42.9487,SUCCESS
+outdoor_scene1 blend-feather,outdoor_scene1,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,156,67,42.9487,SUCCESS
+outdoor_scene1 blend-multiband,outdoor_scene1,img1.jpg-img2.jpg,orb,3.0,multiband,5000,5000,156,67,42.9487,SUCCESS
+outdoor_scene2 blend-simple,outdoor_scene2,img1.jpg-img2.jpg,orb,3.0,simple,5000,5000,81,32,39.5062,SUCCESS
+outdoor_scene2 blend-feather,outdoor_scene2,img1.jpg-img2.jpg,orb,3.0,feather,5000,5000,81,32,39.5062,SUCCESS
+outdoor_scene2 blend-multiband,outdoor_scene2,img1.jpg-img2.jpg,orb,3.0,multiband,5000,5000,81,32,39.5062,SUCCESS
 indoor_scene multi-orb,indoor_scene,multi-image,orb,3.0,feather,0,0,0,0,0,SUCCESS
-indoor_scene multi-akaze,indoor_scene,multi-image,akaze,3.0,feather,0,0,0,0,0,SUCCESS
+indoor_scene multi-akaze,indoor_scene,multi-image,akaze,3.0,feather,0,0,0,0,0,FAILED
 indoor_scene multi-sift,indoor_scene,multi-image,sift,3.0,feather,0,0,0,0,0,SUCCESS
 outdoor_scene1 multi-orb,outdoor_scene1,multi-image,orb,3.0,feather,0,0,0,0,0,SUCCESS
 outdoor_scene1 multi-akaze,outdoor_scene1,multi-image,akaze,3.0,feather,0,0,0,0,0,SUCCESS
