@@ -3,13 +3,13 @@
 _First-person voice ("I")_
 
 ## Abstract
-I built a panorama stitching system for Visual Computing Assignment 1. It detects local features (ORB, AKAZE, SIFT), matches them with k-NN and Lowe’s ratio, estimates a planar homography with RANSAC, warps one image into the other, and blends the overlap (overlay, feathering, or multiband). I evaluate indoor and outdoor pairs, sweep the RANSAC reprojection threshold, and compare blending methods. On these scenes, ORB is the most reliable; changing the RANSAC threshold from 1–5 px barely affects outcomes because inliers and outliers are well separated. Multi-image stitching is more fragile when overlap is low. This report describes the method, results, and practical takeaways.
+I built a panorama stitching system for Visual Computing Assignment 1. It detects local features (ORB, AKAZE, SIFT), matches them with k-NN and Lowe’s ratio, estimates a planar homography with RANSAC, warps one image into the other, and blends the overlap (overlay, feathering, or multiband). I evaluate indoor and outdoor pairs, sweep the RANSAC reprojection threshold, and compare blending methods. On these scenes, ORB is the most reliable; changing the RANSAC threshold from 1–5 px barely affects outcomes because inliers and outliers are well separated. To make detector comparisons fair I cap each detector at ~5000 keypoints per image; AKAZE adapts its detection threshold to reach that budget. Multi-image stitching is more fragile when overlap is low. This report describes the method, results, and practical takeaways.
 
 ## Introduction
 Panorama stitching combines overlapping photos into a single wide view. I follow a standard workflow: detect keypoints, describe them, match correspondences, fit a robust geometric model, warp, and blend. When the camera primarily rotates or the scene is approximately planar, the mapping between views is a 3×3 homography \(H\) with \(x' \sim Hx\) in homogeneous coordinates. I use RANSAC to separate inliers from outliers before warping and then handle seams with blending.
 
 ## Methodology
-I use three detectors. ORB combines FAST keypoints with a rotated BRIEF descriptor, giving fast binary descriptors matched with Hamming distance. AKAZE builds a non-linear scale space and produces MLDB binary descriptors. SIFT produces more expensive floating-point descriptors that are robust to scale and rotation. For ORB and SIFT I cap features at about 5k–50k depending on the run; AKAZE uses a detection threshold (≈0.001) with 4 octaves and 4 layers and is trimmed to the same feature budget when needed.
+I use three detectors. ORB combines FAST keypoints with a rotated BRIEF descriptor, giving fast binary descriptors matched with Hamming distance. AKAZE builds a non-linear scale space and produces MLDB binary descriptors. SIFT produces more expensive floating-point descriptors that are robust to scale and rotation. To ensure fair comparisons, I cap all three detectors at ~5000 keypoints per image; AKAZE adapts its detection threshold (≈0.001, 4 octaves, 4 layers) to reach that budget.
 
 I first convert images to grayscale for detection while keeping the original color for later blending. I match descriptors using brute-force k-NN with k=2 (Hamming for ORB/AKAZE, L2 for SIFT) and filter ambiguous pairs with Lowe’s ratio test at 0.75. From the filtered matches I estimate a homography with RANSAC: each trial samples four correspondences, computes a candidate H, and counts inliers whose reprojection error is below a threshold τ. I sweep τ in {1, 2, 3, 4, 5} pixels (default 3 px), target 0.995 confidence with at most 2000 iterations, then refit H from all inliers. I warp the second image into a canvas sized by transforming its corners and adding a small translation and padding so the panorama coordinates are positive. Finally, I blend overlaps either by simple overwrite, by feathering (distance-transform weights with ~30 px radius), or by multiband blending (≈5-level Laplacian pyramid with Gaussian mask pyramids, automatically reduced if memory is tight). The system also saves visualisations of keypoints, matches, and inliers.
 
@@ -18,9 +18,9 @@ I evaluate three datasets supplied with the assignment: indoor scenes with rich 
 
 ![Figure 1: Aggregated metrics across detectors, thresholds, and blending configurations.](../results_analysis/metrics_analysis.png)
 
-![Figure 2: Panorama I produced with ORB on the indoor scene (frame 1 stitched with frame 2).](../results/indoor_scene_pair_1_2_orb_panorama.jpg)
+![Figure 2: Panorama I produced with ORB on the indoor scene (frame 1 stitched with frame 2).](../results/indoor_scene_pair_1_2_orb.jpg)
 
-![Figure 3: Inlier correspondences after RANSAC for the panorama in Figure 2.](../results_analysis/visualizations/stitch_1_orb_matches_after.jpg)
+![Figure 3: Inlier correspondences after RANSAC for the panorama in Figure 2.](../results_analysis/visualizations/stitch_1_orb_matches_after_ransac.jpg)
 
 ## Results
 I compared detectors on adjacent pairs (1–2, 2–3) and a harder 1–3 wide-baseline case. ORB solved eight of nine pairs with roughly 157 tentative matches and 82 inliers on average (≈52% inlier ratio). AKAZE solved six of nine with about 113 matches and 57 inliers. SIFT produced many matches but fewer successful homographies on the wide-baseline pairs because overlap was limited.
