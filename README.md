@@ -25,8 +25,3 @@ make run
 Results are saved in:
 - `results/` - Raw outputs, panoramas and metrics.csv
 - `results_analysis/` - Organized results with metrics analysis chart
-
-```bash
-# Analyze results
-make analyze
-```
