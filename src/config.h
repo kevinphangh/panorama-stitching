@@ -24,7 +24,7 @@ namespace PanoramaConfig {
     constexpr double MAX_RANSAC_THRESHOLD = 50.0;
     constexpr double DEFAULT_RANSAC_CONFIDENCE = 0.995;
     constexpr int DEFAULT_RANSAC_MAX_ITERATIONS = 2000;
-    constexpr int MIN_INLIERS_REQUIRED = 10;
+    constexpr int MIN_INLIERS_REQUIRED = 5;
     
     // Panorama Size Limits
     constexpr int MAX_PANORAMA_DIMENSION = 15000;

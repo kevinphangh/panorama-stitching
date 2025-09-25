@@ -13,7 +13,7 @@ public:
         const std::string& detector_type = "orb",
         const std::string& blend_mode = "feather",
         double ransac_threshold = 3.0,
-        int max_features = 5000,
+        int max_features = 20000,
         bool visualize = false
     );
 

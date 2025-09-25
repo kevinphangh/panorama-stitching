@@ -5,7 +5,7 @@
 #include <algorithm>
 
 SIFTDetector::SIFTDetector() {
-    max_features_ = 5000;
+    max_features_ = 20000;
     createDetector();
 }
 

@@ -21,7 +21,7 @@ struct ProgramArguments {
     std::string detector_type = "orb";
     std::string blend_mode = "feather";
     double ransac_threshold = 3.0;
-    int max_features = 5000;
+    int max_features = 20000;
     bool visualize = false;
     bool show_help = false;
 };
