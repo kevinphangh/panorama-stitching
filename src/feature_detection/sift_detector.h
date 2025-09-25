@@ -16,4 +16,4 @@ private:
     void createDetector();
 };
 
-#endif // SIFT_DETECTOR_H
+#endif

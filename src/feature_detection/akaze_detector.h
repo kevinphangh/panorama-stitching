@@ -10,7 +10,7 @@ public:
     DetectionResult detect(const cv::Mat& image) override;
     std::string getName() const override { return "AKAZE"; }
     void setMaxFeatures(int max_features) override;
-    
+
 private:
     cv::Ptr<cv::AKAZE> detector_;
     float base_threshold_ = 0.001f;
@@ -22,4 +22,4 @@ private:
     void resetDetector();
 };
 
-#endif // AKAZE_DETECTOR_H
+#endif

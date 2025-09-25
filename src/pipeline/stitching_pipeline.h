@@ -44,4 +44,4 @@ private:
     static cv::Mat createEmptyPanorama();
 };
 
-#endif // STITCHING_PIPELINE_H
+#endif

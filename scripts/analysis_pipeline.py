@@ -16,7 +16,6 @@ from pathlib import Path
 import shutil
 import glob
 
-# Set style for better looking plots
 plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'ggplot')
 plt.rcParams['figure.figsize'] = (10, 6)
 plt.rcParams['font.size'] = 10
@@ -50,7 +49,6 @@ def load_experiment_data(csv_path='results/metrics.csv'):
 
     df = pd.read_csv(csv_path)
 
-    # Convert numeric columns
     numeric_columns = ['keypoints1', 'keypoints2', 'matches', 'inliers', 'inlier_ratio']
     for col in numeric_columns:
         if col in df.columns:
@@ -61,13 +59,11 @@ def load_experiment_data(csv_path='results/metrics.csv'):
 def create_metrics_analysis(df, output_dir):
     """Create comprehensive metrics analysis chart"""
 
-    # Filter out multi-image experiments which have 0 values
     df_filtered = df[df['matches'] > 0].copy()
 
     fig, axes = plt.subplots(2, 3, figsize=(15, 10))
     fig.suptitle('Panorama Stitching Metrics Analysis', fontsize=16, fontweight='bold')
 
-    # 1. Detector Comparison - Average Keypoints
     ax = axes[0, 0]
     detector_kp = df_filtered.groupby('detector')[['keypoints1', 'keypoints2']].mean()
     detector_kp.plot(kind='bar', ax=ax, color=['#3498db', '#e74c3c'])
@@ -78,7 +74,6 @@ def create_metrics_analysis(df, output_dir):
     ax.legend(['Image 1', 'Image 2'])
     ax.grid(True, alpha=0.3)
 
-    # 2. Matches and Inliers by Detector
     ax = axes[0, 1]
     detector_matches = df_filtered.groupby('detector')[['matches', 'inliers']].mean()
     detector_matches.plot(kind='bar', ax=ax, color=['#2ecc71', '#f39c12'])
@@ -89,7 +84,6 @@ def create_metrics_analysis(df, output_dir):
     ax.legend(['Matches', 'Inliers'])
     ax.grid(True, alpha=0.3)
 
-    # 3. RANSAC Threshold Impact
     ax = axes[0, 2]
     ransac_data = df_filtered[df_filtered['experiment'].str.contains('RANSAC', na=False)]
     if not ransac_data.empty:
@@ -102,7 +96,6 @@ def create_metrics_analysis(df, output_dir):
     else:
         ax.text(0.5, 0.5, 'No RANSAC data', ha='center', va='center', transform=ax.transAxes)
 
-    # 4. Success Rate by Detector
     ax = axes[1, 0]
     if 'status' in df.columns:
         success_rate = df.groupby('detector')['status'].apply(
@@ -117,7 +110,6 @@ def create_metrics_analysis(df, output_dir):
     else:
         ax.text(0.5, 0.5, 'No status data', ha='center', va='center', transform=ax.transAxes)
 
-    # 5. Scene Comparison
     ax = axes[1, 1]
     scene_data = df_filtered.groupby('scene')['inliers'].mean()
     scene_data.plot(kind='bar', ax=ax, color='#d35400')
@@ -127,7 +119,6 @@ def create_metrics_analysis(df, output_dir):
     ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
     ax.grid(True, alpha=0.3)
 
-    # 6. Blending Mode Comparison (if available)
     ax = axes[1, 2]
     blend_data = df_filtered[df_filtered['experiment'].str.contains('blend', na=False)]
     if not blend_data.empty and 'status' in blend_data.columns:
@@ -183,11 +174,9 @@ def organize_results_by_scene():
         scene_dir = f"results_analysis/by_scene/{scene}"
         os.makedirs(scene_dir, exist_ok=True)
 
-        # Copy scene-specific results
         for file in glob.glob(f"results/{scene}_*.jpg"):
             shutil.copy2(file, scene_dir)
 
-        # Copy visualizations
         viz_dir = f"{scene_dir}/visualizations"
         os.makedirs(viz_dir, exist_ok=True)
         for file in glob.glob(f"results/visualizations/{scene}_*.jpg"):
@@ -195,7 +184,6 @@ def organize_results_by_scene():
 
         print(f"  ✓ Organized {scene} results")
 
-    # Organize by experiment type
     exp_types = {
         'detector_comparison': '*_orb.jpg *_akaze.jpg *_sift.jpg',
         'ransac_analysis': '*_ransac_*.jpg',
@@ -220,11 +208,9 @@ def main():
     print("PANORAMA STITCHING ANALYSIS PIPELINE")
     print("="*60 + "\n")
 
-    # Step 1: Fix CSV format if needed
     print("📊 Processing experiment metrics...")
     fix_csv_format()
 
-    # Step 2: Load experiment data
     df = load_experiment_data()
     if df is None:
         print("❌ Failed to load experiment data")
@@ -232,20 +218,16 @@ def main():
 
     print(f"  ✓ Loaded {len(df)} experiments")
 
-    # Step 3: Create output directory
     output_dir = 'results_analysis'
     os.makedirs(output_dir, exist_ok=True)
 
-    # Step 4: Generate metrics analysis
     print("\n📈 Generating metrics analysis...")
     create_metrics_analysis(df, output_dir)
 
-    # Step 5: Organize visualizations
     if os.path.exists('results/visualizations'):
         print("\n🖼️  Organizing visualizations...")
         organize_visualizations('results/visualizations', output_dir)
 
-    # Step 6: Copy panorama results
     print("\n📁 Copying panorama results...")
     panoramas_dir = os.path.join(output_dir, 'panoramas')
     os.makedirs(panoramas_dir, exist_ok=True)
@@ -265,15 +247,12 @@ def main():
 
     print(f"  ✓ Copied {panorama_count} panorama images")
 
-    # Step 7: Save CSV to analysis directory
     df.to_csv(f'{output_dir}/metrics_analyzed.csv', index=False)
     print(f"  ✓ Saved analyzed metrics to {output_dir}/metrics_analyzed.csv")
 
-    # Step 8: Organize by scene
     print("\n🗂️  Organizing results by scene and experiment type...")
     organize_results_by_scene()
 
-    # Step 9: Print summary statistics
     print("\n" + "="*60)
     print("ANALYSIS SUMMARY")
     print("="*60)
@@ -284,7 +263,6 @@ def main():
         success_rate = (success_count / total_count * 100) if total_count > 0 else 0
         print(f"✅ Success Rate: {success_count}/{total_count} ({success_rate:.1f}%)")
 
-    # Group by detector
     print("\n📊 Results by Detector:")
     for detector in df['detector'].unique():
         detector_df = df[df['detector'] == detector]

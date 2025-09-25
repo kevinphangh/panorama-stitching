@@ -64,4 +64,4 @@ bool ArgumentParser::parseArgument(const std::string& arg, T& value, const std::
     return true;
 }
 
-#endif // ARGUMENT_PARSER_H
+#endif

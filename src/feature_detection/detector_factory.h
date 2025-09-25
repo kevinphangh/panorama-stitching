@@ -24,4 +24,4 @@ private:
     DetectorFactory() = delete;
 };
 
-#endif // DETECTOR_FACTORY_H
+#endif

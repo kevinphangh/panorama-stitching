@@ -17,11 +17,10 @@ make build
 # Quick test
 make test
 
-# Full experiments (60 tests)
+# Full experiments
 make run
 
 ## View Results
-
 Results are saved in:
 - `results/` - Raw outputs, panoramas and metrics.csv
 - `results_analysis/` - Organized results with metrics analysis chart

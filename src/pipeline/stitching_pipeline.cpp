@@ -359,7 +359,7 @@ cv::Mat StitchingPipeline::performStitchingDirect(
         return cv::Mat();
     }
 
-    size_t estimated_bytes = static_cast<size_t>(panorama_size.width) * panorama_size.height * 3 * 2;  // x2 for processing overhead
+    size_t estimated_bytes = static_cast<size_t>(panorama_size.width) * panorama_size.height * 3 * 2;
     if (estimated_bytes > PanoramaConfig::MAX_PANORAMA_MEMORY) {
         std::cerr << "Error: Panorama would require approximately "
                   << (estimated_bytes / 1048576) << " MB of memory (max: "
@@ -433,7 +433,7 @@ cv::Mat StitchingPipeline::performSequentialStitching(
         std::cout << "\n=== Stitching image " << (i + 1) << " (left side) ===\n";
 
         cv::Mat result = performStitchingDirect(
-            images[i], panorama,  // Note: reversed order for left side
+            images[i], panorama,
             detector_type, blend_mode,
             ransac_threshold, max_features,
             visualize, PanoramaConfig::MAX_PANORAMA_DIMENSION

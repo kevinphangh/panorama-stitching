@@ -11,11 +11,11 @@ SIFTDetector::SIFTDetector() {
 
 void SIFTDetector::createDetector() {
     detector_ = cv::SIFT::create(
-        max_features_,        // nfeatures
-        3,                    // nOctaveLayers
-        0.04,                 // contrastThreshold
-        10,                   // edgeThreshold
-        1.6                   // sigma
+        max_features_,
+        3,
+        0.04,
+        10,
+        1.6
     );
 }
 

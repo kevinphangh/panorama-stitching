@@ -17,4 +17,4 @@ private:
     BlenderFactory() = delete;
 };
 
-#endif // BLENDER_FACTORY_H
+#endif

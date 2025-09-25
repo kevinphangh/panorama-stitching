@@ -31,4 +31,4 @@ private:
     void writeCSVRow(std::ofstream& file, const ExperimentResult& result) const;
 };
 
-#endif // REPORT_GENERATOR_H
+#endif
