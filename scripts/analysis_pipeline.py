@@ -61,33 +61,59 @@ def create_metrics_analysis(df, output_dir):
 
     df_filtered = df[df['matches'] > 0].copy()
 
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
     fig.suptitle('Panorama Stitching Metrics Analysis', fontsize=16, fontweight='bold')
 
+    pair_mask = df_filtered['experiment'].str.contains('pair', na=False)
+    baseline_mask = pair_mask.copy()
+
+    if 'threshold' in df_filtered.columns:
+        baseline_mask &= df_filtered['threshold'].sub(3.0).abs() <= 1e-6
+
+    if 'blend_mode' in df_filtered.columns:
+        baseline_mask &= (df_filtered['blend_mode'] == 'feather') | df_filtered['blend_mode'].isna()
+
+    detector_data = df_filtered[baseline_mask].copy()
+    if detector_data.empty:
+        detector_data = df_filtered[pair_mask].copy()
+    if detector_data.empty:
+        detector_data = df_filtered.copy()
+
     ax = axes[0, 0]
-    detector_kp = df_filtered.groupby('detector')[['keypoints1', 'keypoints2']].mean()
-    detector_kp.plot(kind='bar', ax=ax, color=['#3498db', '#e74c3c'])
-    ax.set_title('Average Keypoints by Detector')
-    ax.set_xlabel('Detector')
-    ax.set_ylabel('Number of Keypoints')
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
-    ax.legend(['Image 1', 'Image 2'])
-    ax.grid(True, alpha=0.3)
+    if detector_data.empty:
+        ax.text(0.5, 0.5, 'No detector comparison data', ha='center', va='center', transform=ax.transAxes)
+        ax.axis('off')
+    else:
+        detector_kp = detector_data.groupby('detector')[['keypoints1', 'keypoints2']].mean()
+        detector_kp.columns = ['First image in pair', 'Second image in pair']
+        detector_kp.plot(kind='bar', ax=ax, color=['#3498db', '#e74c3c'])
+        ax.set_title('Average Keypoints by Detector')
+        ax.set_xlabel('Detector')
+        ax.set_ylabel('Number of Keypoints')
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
+        ax.legend()
+        ax.grid(True, alpha=0.3)
 
     ax = axes[0, 1]
-    detector_matches = df_filtered.groupby('detector')[['matches', 'inliers']].mean()
-    detector_matches.plot(kind='bar', ax=ax, color=['#2ecc71', '#f39c12'])
-    ax.set_title('Average Matches and Inliers')
-    ax.set_xlabel('Detector')
-    ax.set_ylabel('Count')
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
-    ax.legend(['Matches', 'Inliers'])
-    ax.grid(True, alpha=0.3)
+    if detector_data.empty:
+        ax.text(0.5, 0.5, 'No detector comparison data', ha='center', va='center', transform=ax.transAxes)
+        ax.axis('off')
+    else:
+        detector_matches = detector_data.groupby('detector')[['matches', 'inliers']].mean()
+        detector_matches.plot(kind='bar', ax=ax, color=['#2ecc71', '#f39c12'])
+        ax.set_title('Average Matches and Inliers')
+        ax.set_xlabel('Detector')
+        ax.set_ylabel('Count')
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
+        ax.legend(['Matches', 'Inliers'])
+        ax.grid(True, alpha=0.3)
 
-    ax = axes[0, 2]
-    ransac_data = df_filtered[df_filtered['experiment'].str.contains('RANSAC', na=False)]
+    ax = axes[1, 0]
+    ransac_data = df_filtered[df_filtered['experiment'].str.contains('RANSAC', na=False)].copy()
     if not ransac_data.empty:
-        ransac_grouped = ransac_data.groupby('threshold')['inlier_ratio'].mean()
+        if 'threshold' in ransac_data.columns:
+            ransac_data['threshold'] = pd.to_numeric(ransac_data['threshold'], errors='coerce')
+        ransac_grouped = ransac_data.groupby('threshold')['inlier_ratio'].mean().sort_index()
         ransac_grouped.plot(kind='line', ax=ax, marker='o', linewidth=2, markersize=8, color='#9b59b6')
         ax.set_title('RANSAC Threshold vs Inlier Ratio')
         ax.set_xlabel('RANSAC Threshold')
@@ -96,43 +122,18 @@ def create_metrics_analysis(df, output_dir):
     else:
         ax.text(0.5, 0.5, 'No RANSAC data', ha='center', va='center', transform=ax.transAxes)
 
-    ax = axes[1, 0]
-    if 'status' in df.columns:
-        success_rate = df.groupby('detector')['status'].apply(
-            lambda x: (x == 'SUCCESS').sum() / len(x) * 100
-        )
-        success_rate.plot(kind='bar', ax=ax, color='#16a085')
-        ax.set_title('Success Rate by Detector')
-        ax.set_xlabel('Detector')
-        ax.set_ylabel('Success Rate (%)')
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
-        ax.grid(True, alpha=0.3)
-    else:
-        ax.text(0.5, 0.5, 'No status data', ha='center', va='center', transform=ax.transAxes)
-
     ax = axes[1, 1]
-    scene_data = df_filtered.groupby('scene')['inliers'].mean()
-    scene_data.plot(kind='bar', ax=ax, color='#d35400')
-    ax.set_title('Average Inliers by Scene')
-    ax.set_xlabel('Scene')
-    ax.set_ylabel('Average Inliers')
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
-    ax.grid(True, alpha=0.3)
-
-    ax = axes[1, 2]
-    blend_data = df_filtered[df_filtered['experiment'].str.contains('blend', na=False)]
-    if not blend_data.empty and 'status' in blend_data.columns:
-        blend_success = blend_data.groupby('blend_mode')['status'].apply(
-            lambda x: (x == 'SUCCESS').sum() / len(x) * 100
-        )
-        blend_success.plot(kind='bar', ax=ax, color='#34495e')
-        ax.set_title('Success Rate by Blending Mode')
-        ax.set_xlabel('Blending Mode')
-        ax.set_ylabel('Success Rate (%)')
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
-        ax.grid(True, alpha=0.3)
+    scene_data = detector_data.groupby('scene')['inliers'].mean()
+    if scene_data.empty:
+        ax.text(0.5, 0.5, 'No scene data available', ha='center', va='center', transform=ax.transAxes)
+        ax.axis('off')
     else:
-        ax.text(0.5, 0.5, 'No blending data', ha='center', va='center', transform=ax.transAxes)
+        scene_data.plot(kind='bar', ax=ax, color='#d35400')
+        ax.set_title('Average Inliers by Scene')
+        ax.set_xlabel('Scene')
+        ax.set_ylabel('Average Inliers')
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
+        ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
 
