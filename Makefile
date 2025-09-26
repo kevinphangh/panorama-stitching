@@ -1,30 +1,22 @@
-.PHONY: build configure run run-single clean distclean
+CMAKE := cmake
+BUILD_DIR := build
+BUILD_TYPE := Release
 
-CMAKE_FLAGS ?= -DCMAKE_BUILD_TYPE=Release
-BUILD_DIR ?= build
-NPROC ?= $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+BLUE := \033[0;34m
+GREEN := \033[0;32m
+NC := \033[0m
 
-configure:
-	cmake -S . -B $(BUILD_DIR) $(CMAKE_FLAGS)
+.PHONY: all build run
+all: build
 
-build: configure
-	cmake --build $(BUILD_DIR) -- -j$(NPROC)
+build:
+	@echo "$(BLUE)Building panorama stitcher...$(NC)"
+	@mkdir -p $(BUILD_DIR)
+	@cd $(BUILD_DIR) && $(CMAKE) .. -DCMAKE_BUILD_TYPE=$(BUILD_TYPE)
+	@$(MAKE) -C $(BUILD_DIR) -j$$(nproc)
+	@echo "$(GREEN)✓ Build complete!$(NC)"
+	@echo "Binary at: $(BUILD_DIR)/panorama_stitcher"
 
 run: build
-	./scripts/run-experiments.sh
-
-run-single: build
-	@if [ -z "$(ARGS)" ]; then \
-		echo "Usage: make run-single ARGS=\"--stitch datasets/<scene>/img1.jpg datasets/<scene>/img2.jpg ...\""; \
-		exit 1; \
-	fi
-	./scripts/run_panorama.sh $(ARGS)
-
-clean:
-	@if [ -d $(BUILD_DIR) ]; then \
-		cmake --build $(BUILD_DIR) --target clean; \
-	fi
-	rm -rf results results_analysis
-
-distclean:
-	rm -rf $(BUILD_DIR) results results_analysis
+	@echo "$(BLUE)Running experiments...$(NC)"
+	@./scripts/run-experiments.sh
